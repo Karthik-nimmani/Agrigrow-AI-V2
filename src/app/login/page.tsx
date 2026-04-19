@@ -1,41 +1,48 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sprout, Phone, Mail, Loader2 } from 'lucide-react';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'method' | 'phone' | 'otp'>('method');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const auth = useAuth();
+  const { user } = useUser();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep('otp');
-    }, 1500);
+    // For prototype, we'll use anonymous sign-in even for the phone flow to get a real session
+    initiateAnonymousSignIn(auth);
   };
 
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/dashboard');
-    }, 1500);
+    initiateAnonymousSignIn(auth);
   };
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/dashboard');
-    }, 1500);
+    initiateAnonymousSignIn(auth);
+  };
+
+  const handleQuickLogin = () => {
+    setIsLoading(true);
+    initiateAnonymousSignIn(auth);
   };
 
   return (
@@ -54,16 +61,28 @@ export default function LoginPage() {
           {step === 'method' && (
             <div className="space-y-4">
               <Button 
-                onClick={() => setStep('phone')} 
+                onClick={handleQuickLogin}
+                disabled={isLoading}
                 className="w-full h-12 text-lg rounded-lg flex items-center gap-3"
+              >
+                {isLoading ? <Loader2 className="animate-spin" /> : <Sprout className="w-5 h-5" />}
+                Quick Login (Prototype)
+              </Button>
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Or Use Standard Methods</span></div>
+              </div>
+
+              <Button 
+                variant="outline"
+                onClick={() => setStep('phone')} 
+                className="w-full h-12 text-lg rounded-lg flex items-center gap-3 border-muted-foreground/20"
               >
                 <Phone className="w-5 h-5" />
                 Login with Phone Number
               </Button>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-muted-foreground">Or</span></div>
-              </div>
+
               <Button 
                 variant="outline" 
                 onClick={handleGoogleLogin}
