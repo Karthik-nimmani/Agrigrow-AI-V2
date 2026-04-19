@@ -58,10 +58,10 @@ export default function Dashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  // Real-time Fields Synchronization
+  // Real-time Fields Synchronization - using 'farmFields' to match backend.json
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'fields');
+    return collection(firestore, 'users', user.uid, 'farmFields');
   }, [firestore, user]);
 
   const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
@@ -109,7 +109,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-4 md:p-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>

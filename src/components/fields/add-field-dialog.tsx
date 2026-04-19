@@ -52,7 +52,7 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
   const [lastYield, setLastYield] = useState('1000');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'Session Required', description: 'Please sign in to register your field.' });
@@ -89,18 +89,19 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
       createdAt: new Date().toISOString()
     };
 
-    const colRef = collection(firestore, 'users', user.uid, 'fields');
+    // Correct collection path based on backend.json
+    const colRef = collection(firestore, 'users', user.uid, 'farmFields');
     
-    // Using non-blocking update as per guidelines
-    addDocumentNonBlocking(colRef, fieldData)
-      .then(() => {
-        toast({ title: 'Success', description: `${name} has been added to your field list.` });
-        setOpen(false);
-        resetForm();
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+    try {
+      await addDocumentNonBlocking(colRef, fieldData);
+      toast({ title: 'Success', description: `${name} has been added to your field list.` });
+      setOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error adding field:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {

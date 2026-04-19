@@ -1,8 +1,9 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   Home,
@@ -13,6 +14,8 @@ import {
   Globe,
   LogOut
 } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
@@ -24,6 +27,17 @@ const navItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const auth = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b">
@@ -55,9 +69,13 @@ export function DashboardNav() {
           <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
             <Globe className="w-5 h-5" />
           </button>
-          <Link href="/login" className="p-2 text-muted-foreground hover:text-destructive transition-colors">
+          <button 
+            onClick={handleSignOut}
+            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+            title="Sign Out"
+          >
             <LogOut className="w-5 h-5" />
-          </Link>
+          </button>
         </div>
       </div>
 

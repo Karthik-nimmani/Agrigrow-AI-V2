@@ -48,9 +48,10 @@ export default function FieldsPage() {
     }
   }, [user, isUserLoading, router]);
 
+  // Using 'farmFields' to match backend.json
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'fields');
+    return collection(firestore, 'users', user.uid, 'farmFields');
   }, [firestore, user]);
 
   const { data: fields, isLoading } = useCollection(fieldsQuery);
@@ -61,7 +62,7 @@ export default function FieldsPage() {
 
   const handleDelete = (fieldId: string) => {
     if (!user || !firestore) return;
-    const fieldRef = doc(firestore, 'users', user.uid, 'fields', fieldId);
+    const fieldRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
     deleteDocumentNonBlocking(fieldRef);
     toast({
       title: "Field removed",
