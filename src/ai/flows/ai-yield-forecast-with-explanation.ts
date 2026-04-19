@@ -3,7 +3,7 @@
  * @fileOverview This file implements a Genkit flow for predicting crop yields and providing explanations for these predictions.
  *
  * - aiYieldForecastWithExplanation - A function that generates an AI-powered yield forecast with an explanation.
- * - YieldForecastInput - The input type for the aiYieldForecastWithExplanation function.
+ * - YieldForecastInput - The input type for the aiYieldForecastWithexplanation function.
  * - YieldForecastOutput - The return type for the aiYieldForecastWithExplanation function.
  */
 

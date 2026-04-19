@@ -17,18 +17,34 @@ import {
   Sparkles,
   Loader2,
   ChevronRight,
-  MapPin
+  MapPin,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { EditFieldDialog } from '@/components/fields/edit-field-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Dashboard() {
   const router = useRouter();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
   
   const [weatherData, setWeatherData] = useState({
     temp: 24,
@@ -88,6 +104,16 @@ export default function Dashboard() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const handleDeleteField = (fieldId: string) => {
+    if (!user || !firestore) return;
+    const fieldRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
+    deleteDocumentNonBlocking(fieldRef);
+    toast({
+      title: "Field removed",
+      description: "Field has been successfully deleted from your records."
+    });
   };
 
   useEffect(() => {
@@ -276,42 +302,69 @@ export default function Dashboard() {
             </Card>
           ) : (
             fields?.slice(0, 4).map((field) => (
-              <Link key={field.id} href={`/fields/${field.id}`}>
-                <Card className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-white rounded-2xl flex border border-slate-50 relative">
-                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-destructive" />
-                  <div className="w-24 bg-secondary/30 flex flex-col items-center justify-center gap-2 shrink-0 group-hover:bg-secondary/50 transition-colors py-8">
-                    <Sprout className="w-8 h-8 text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
-                      {field.currentCropId || 'Maize'}
-                    </span>
-                  </div>
-                  <div className="flex-1 flex flex-col justify-between p-6">
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <h4 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors">
-                          {field.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
-                          <MapPin className="w-3 h-3" /> {field.locationDescription || 'Local Region'}
-                        </p>
+              <div key={field.id} className="relative group">
+                <Link href={`/fields/${field.id}`}>
+                  <Card className="border-none shadow-sm hover:shadow-md transition-all bg-white rounded-2xl flex border border-slate-50 overflow-hidden min-h-[160px]">
+                    <div className="w-24 bg-secondary/30 flex flex-col items-center justify-center gap-2 shrink-0 group-hover:bg-secondary/50 transition-colors py-8">
+                      <Sprout className="w-8 h-8 text-primary" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                        {field.currentCropId || 'Maize'}
+                      </span>
+                    </div>
+                    <div className="flex-1 flex flex-col justify-between p-6">
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <h4 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors">
+                            {field.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                            <MapPin className="w-3 h-3" /> {field.locationDescription || 'Local Region'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
+                          <span className="flex items-center gap-1">
+                            {field.area} <span className="text-muted-foreground font-normal">Acres</span>
+                          </span>
+                          <div className="w-1 h-1 rounded-full bg-slate-200" />
+                          <span className="flex items-center gap-1">
+                            <span className="text-muted-foreground font-normal">pH</span> {field.soilPH || '6.5'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
-                        <span className="flex items-center gap-1">
-                          {field.area} <span className="text-muted-foreground font-normal">Acres</span>
-                        </span>
-                        <div className="w-1 h-1 rounded-full bg-slate-200" />
-                        <span className="flex items-center gap-1">
-                          <span className="text-muted-foreground font-normal">pH</span> {field.soilPH || '6.5'}
-                        </span>
+                      <div className="mt-4 pt-4 border-t flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
+                        <span className="text-xs font-bold text-green-600">Active</span>
                       </div>
                     </div>
-                    <div className="mt-6 pt-4 border-t flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
-                      <span className="text-xs font-bold text-destructive">Analysis Required</span>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
+                  </Card>
+                </Link>
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <EditFieldDialog field={field} trigger={
+                    <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-white/90 shadow-sm hover:bg-white">
+                      <Edit3 className="w-4 h-4 text-primary" />
+                    </Button>
+                  } />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-white/90 shadow-sm hover:bg-destructive hover:text-white">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Field?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{field.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteField(field.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
             ))
           )}
         </div>
