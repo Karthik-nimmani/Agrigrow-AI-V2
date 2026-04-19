@@ -17,7 +17,8 @@ import {
   RefreshCw,
   Sparkles,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -108,7 +109,7 @@ export default function Dashboard() {
     <div className="space-y-8 p-4 md:p-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold font-headline mb-2">Farm Overview</h1>
+          <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">Farm Overview</h1>
           <p className="text-muted-foreground text-lg">Real-time monitoring and AI-driven precision tools.</p>
         </div>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-white px-3 py-1.5 rounded-full shadow-sm">
@@ -245,43 +246,78 @@ export default function Dashboard() {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold font-headline">My Fields</h2>
-          <Link href="/fields">
-            <Button variant="ghost" className="text-primary flex items-center gap-2">
-              View All <ChevronRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          <h2 className="text-3xl font-bold font-headline text-slate-900">Active Fields</h2>
+          <div className="flex items-center gap-3">
+            <Link href="/fields">
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary h-9">
+                View All <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+            <Link href="/fields/new">
+              <Button size="sm" className="rounded-xl h-9 px-4 flex items-center gap-2 shadow-sm">
+                <Plus className="w-4 h-4" /> Add New Field
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isFieldsLoading ? (
-            Array(3).fill(0).map((_, i) => (
-              <Card key={i} className="animate-pulse bg-muted/20 border-none h-24" />
+            Array(2).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse bg-muted/20 border-none h-48 rounded-2xl" />
             ))
           ) : fields?.length === 0 ? (
-            <Card className="col-span-full border-none bg-muted/10 p-12 text-center">
-              <Sprout className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-bold">No Fields Registered</h3>
-              <p className="text-muted-foreground mb-4">Add your first acreage to start tracking.</p>
+            <Card className="col-span-full border-none bg-white p-16 text-center shadow-sm rounded-3xl border border-slate-100">
+              <Sprout className="w-16 h-16 text-muted-foreground/20 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-slate-800">No Fields Registered</h3>
+              <p className="text-muted-foreground mb-8 max-w-xs mx-auto">Add your first acreage to start tracking soil health and yields.</p>
               <Link href="/fields/new">
-                <Button>Register Field</Button>
+                <Button size="lg" className="rounded-2xl px-8 h-12 shadow-lg">Register Field</Button>
               </Link>
             </Card>
           ) : (
-            fields?.slice(0, 3).map((field) => (
+            fields?.slice(0, 4).map((field) => (
               <Link key={field.id} href={`/fields/${field.id}`}>
-                <Card className="border-none shadow-sm hover:shadow-md transition-all group h-full">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
+                <Card className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-white rounded-2xl flex border border-slate-50 relative">
+                  {/* Status Indicator Dot */}
+                  <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-destructive" />
+                  
+                  {/* Left Sidebar Icon Area */}
+                  <div className="w-24 bg-secondary/30 flex flex-col items-center justify-center gap-2 shrink-0 group-hover:bg-secondary/50 transition-colors py-8">
+                    <Sprout className="w-8 h-8 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
+                      {field.currentCropId || 'Maize'}
+                    </span>
+                  </div>
+
+                  {/* Main Content Area */}
+                  <div className="flex-1 flex flex-col justify-between p-6">
+                    <div className="space-y-4">
                       <div className="space-y-1">
-                        <h4 className="font-bold text-lg group-hover:text-primary transition-colors">{field.name}</h4>
-                        <p className="text-sm text-muted-foreground">{field.area} {field.unitOfArea}</p>
-                        <p className="text-xs font-bold text-primary uppercase">{field.currentCropId}</p>
+                        <h4 className="text-xl font-bold text-slate-800 group-hover:text-primary transition-colors">
+                          {field.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                          <MapPin className="w-3 h-3" /> {field.locationDescription || 'Local Region'}
+                        </p>
                       </div>
-                      <div className="p-2 bg-primary/5 rounded-lg">
-                        <Sprout className="w-5 h-5 text-primary" />
+
+                      <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
+                        <span className="flex items-center gap-1">
+                          {field.area} <span className="text-muted-foreground font-normal">Acres</span>
+                        </span>
+                        <div className="w-1 h-1 rounded-full bg-slate-200" />
+                        <span className="flex items-center gap-1">
+                          <span className="text-muted-foreground font-normal">pH</span> {field.soilPH || '6.5'}
+                        </span>
                       </div>
                     </div>
-                  </CardContent>
+
+                    <div className="mt-6 pt-4 border-t flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
+                      <span className="text-xs font-bold text-destructive">Analysis Required</span>
+                    </div>
+                  </div>
                 </Card>
               </Link>
             ))
