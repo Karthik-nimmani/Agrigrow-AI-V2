@@ -32,7 +32,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function FieldsPage() {
   const router = useRouter();
@@ -48,7 +47,7 @@ export default function FieldsPage() {
     }
   }, [user, isUserLoading, router]);
 
-  // Using 'farmFields' to match backend.json
+  // Using 'farmFields' path as per backend.json
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -88,11 +87,11 @@ export default function FieldsPage() {
           <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">My Fields</h1>
           <p className="text-muted-foreground text-lg">Manage and monitor your farm acreage.</p>
         </div>
-        <AddFieldDialog trigger={
+        <Link href="/fields/new">
           <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90 shadow-md">
             <Plus className="w-5 h-5" /> Add New Field
           </Button>
-        } />
+        </Link>
       </div>
 
       {/* Search and Filter Section */}
@@ -127,7 +126,9 @@ export default function FieldsPage() {
               <h3 className="font-bold text-2xl text-slate-800">No Fields Registered</h3>
               <p className="text-muted-foreground max-w-xs mx-auto">Add your first cultivation area to start tracking soil health and yields.</p>
             </div>
-            <AddFieldDialog trigger={<Button variant="outline" className="rounded-xl px-8 h-12 border-primary text-primary hover:bg-primary/5">Register Your First Field</Button>} />
+            <Link href="/fields/new">
+              <Button variant="outline" className="rounded-xl px-8 h-12 border-primary text-primary hover:bg-primary/5">Register Your First Field</Button>
+            </Link>
           </div>
         ) : (
           filteredFields.map((field) => (
@@ -146,7 +147,7 @@ export default function FieldsPage() {
                       <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
                       <div className="flex gap-2">
                         <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg border-none text-[10px] uppercase">
-                          {field.areaAmount} {field.areaUnit}
+                          {field.area} {field.unitOfArea}
                         </Badge>
                         <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg border-none text-[10px] uppercase">
                           pH {field.soilPH}
@@ -155,10 +156,10 @@ export default function FieldsPage() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <p className="text-muted-foreground text-sm font-medium flex items-center gap-1.5">
-                        <MapPin className="w-3 h-3" /> {field.locationDescription}
+                        <MapPin className="w-3 h-3" /> {field.locationDescription || 'N/A'}
                       </p>
                       <p className="text-muted-foreground text-sm font-medium">
-                        Current Crop: <span className="font-bold text-primary">{field.currentCropTypeId}</span>
+                        Current Crop: <span className="font-bold text-primary">{field.currentCropId}</span>
                       </p>
                     </div>
                   </div>

@@ -30,14 +30,8 @@ export default function AddNewFieldPage() {
   const [cropType, setCropType] = useState('Maize');
   const [location, setLocation] = useState('');
   const [soilType, setSoilType] = useState('Loamy');
-  const [irrigation, setIrrigation] = useState('Rainfed');
   const [ph, setPh] = useState([6.5]);
-  const [nitrogen, setNitrogen] = useState('Optimal');
-  const [phosphorus, setPhosphorus] = useState('Optimal');
-  const [potassium, setPotassium] = useState('Optimal');
-  const [moisture, setMoisture] = useState('35');
   const [area, setArea] = useState('2');
-  const [lastYield, setLastYield] = useState('1000');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
   // Redirect if not logged in
@@ -59,22 +53,18 @@ export default function AddNewFieldPage() {
     const fieldData = {
       userId: user.uid,
       name,
-      currentCropTypeId: cropType,
+      currentCropId: cropType,
       locationDescription: location,
       soilType,
-      irrigationMethod: irrigation,
       soilPH: ph[0],
-      nutrients: { nitrogen, phosphorus, potassium, moisture: Number(moisture) },
-      areaAmount: Number(area),
-      areaUnit: 'Acres',
-      yieldHistoryAmount: Number(lastYield),
-      plantingDate: sowingDate ? sowingDate.toISOString() : new Date().toISOString(),
-      status: 'Healthy',
-      createdAt: new Date().toISOString()
+      area: Number(area),
+      unitOfArea: 'Acres',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     try {
-      const colRef = collection(firestore, 'users', user.uid, 'fields');
+      const colRef = collection(firestore, 'users', user.uid, 'farmFields');
       addDocumentNonBlocking(colRef, fieldData);
       
       toast({ title: 'Field Added', description: `${name} has been successfully registered.` });
@@ -154,31 +144,6 @@ export default function AddNewFieldPage() {
                 <span className="font-bold text-primary text-lg">{ph[0]}</span>
               </div>
               <Slider value={ph} onValueChange={setPh} max={14} step={0.1} />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-muted/20 border border-muted">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">N</span>
-                <Select value={nitrogen} onValueChange={setNitrogen}><SelectTrigger className="h-9 bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Optimal">Optimal</SelectItem><SelectItem value="High">High</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">P</span>
-                <Select value={phosphorus} onValueChange={setPhosphorus}><SelectTrigger className="h-9 bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Optimal">Optimal</SelectItem><SelectItem value="High">High</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">K</span>
-                <Select value={potassium} onValueChange={setPotassium}><SelectTrigger className="h-9 bg-white"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="Low">Low</SelectItem><SelectItem value="Optimal">Optimal</SelectItem><SelectItem value="High">High</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Moist %</span>
-                <Input type="number" value={moisture} onChange={(e) => setMoisture(e.target.value)} className="h-9 bg-white" />
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-6">

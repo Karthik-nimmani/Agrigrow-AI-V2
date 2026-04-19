@@ -1,10 +1,10 @@
+
 "use client";
 
-import React, { useState, use } from 'react';
+import React, { useState, use, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, 
   TrendingUp, 
@@ -15,48 +15,77 @@ import {
   Info
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { aiYieldForecastWithExplanation, type YieldForecastOutput } from '@/ai/flows/ai-yield-forecast-with-explanation';
 import { aiActionableCropRecommendations, type AiActionableCropRecommendationsOutput } from '@/ai/flows/ai-actionable-crop-recommendations-flow';
+import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function FieldDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { firestore } = useFirestore();
+  const { user } = useUser();
+  const router = useRouter();
+  
   const [forecast, setForecast] = useState<YieldForecastOutput | null>(null);
   const [recommendations, setRecommendations] = useState<AiActionableCropRecommendationsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInsight, setIsLoadingInsight] = useState(false);
+
+  const fieldRef = useMemoFirebase(() => {
+    if (!firestore || !user || !id) return null;
+    return doc(firestore, 'users', user.uid, 'farmFields', id);
+  }, [firestore, user, id]);
+
+  const { data: field, isLoading: isFieldLoading } = useDoc(fieldRef);
 
   const handleGenerateInsight = async () => {
-    setIsLoading(true);
+    if (!field) return;
+    setIsLoadingInsight(true);
     try {
-      // Forecast
       const fRes = await aiYieldForecastWithExplanation({
-        cropType: "Wheat",
-        fieldArea: 12,
-        fieldAreaUnit: "Acres",
-        soilpH: 6.8,
-        yieldHistory: "Last year: 2.5 tons/acre. Consistent growth over 3 years.",
-        recentRainfall: "150mm over the last 30 days. Adequate.",
-        fertilizerApplied: "Urea 50kg/acre applied 10 days ago.",
-        temperatureHistory: "Avg 22C, Max 28C, Min 14C.",
-        humidityHistory: "Avg 60%.",
-        pestsDiseasesObserved: "None observed."
+        cropType: field.currentCropId || "Wheat",
+        fieldArea: field.area || 0,
+        fieldAreaUnit: field.unitOfArea || "Acres",
+        soilpH: field.soilPH || 6.5,
+        yieldHistory: "Consistent growth.",
+        recentRainfall: "Adequate.",
+        fertilizerApplied: "Standard application.",
+        temperatureHistory: "Optimal.",
+        humidityHistory: "Optimal.",
+        pestsDiseasesObserved: "None."
       });
       setForecast(fRes);
 
-      // Recommendations
       const rRes = await aiActionableCropRecommendations({
-        cropType: "Wheat",
-        soilPH: 6.8,
-        areaAcres: 12,
+        cropType: field.currentCropId || "Wheat",
+        soilPH: field.soilPH || 6.5,
+        areaAcres: field.area || 0,
         yieldForecast: `Predicted ${fRes.predictedYieldValue} ${fRes.predictedYieldUnit}`
       });
       setRecommendations(rRes);
-
     } catch (err) {
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsLoadingInsight(false);
     }
   };
+
+  if (isFieldLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!field) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-muted-foreground mb-4">Field not found.</p>
+        <Link href="/fields"><Button variant="outline">Back to Fields</Button></Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20">
@@ -67,10 +96,10 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold font-headline">North Wheat Field</h1>
+          <h1 className="text-3xl font-bold font-headline">{field.name}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="secondary">Wheat</Badge>
-            <span className="text-muted-foreground text-sm">• 12 Acres</span>
+            <Badge variant="secondary">{field.currentCropId}</Badge>
+            <span className="text-muted-foreground text-sm">• {field.area} {field.unitOfArea}</span>
           </div>
         </div>
       </div>
@@ -92,12 +121,12 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
                 <div className="p-4 rounded-xl border flex flex-col items-center text-center">
                   <Droplets className="w-5 h-5 text-primary mb-2" />
                   <span className="text-xs text-muted-foreground">Soil pH</span>
-                  <span className="text-lg font-bold">6.8</span>
+                  <span className="text-lg font-bold">{field.soilPH}</span>
                 </div>
                 <div className="p-4 rounded-xl border flex flex-col items-center text-center">
                   <TrendingUp className="w-5 h-5 text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground">Est. Progress</span>
-                  <span className="text-lg font-bold">65%</span>
+                  <span className="text-xs text-muted-foreground">Area</span>
+                  <span className="text-lg font-bold">{field.area}</span>
                 </div>
                 <div className="p-4 rounded-xl border flex flex-col items-center text-center">
                   <Info className="w-5 h-5 text-primary mb-2" />
@@ -106,8 +135,8 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="p-4 rounded-xl border flex flex-col items-center text-center">
                   <TrendingUp className="w-5 h-5 text-primary mb-2" />
-                  <span className="text-xs text-muted-foreground">Last Yield</span>
-                  <span className="text-lg font-bold">2.5 t/a</span>
+                  <span className="text-xs text-muted-foreground">Type</span>
+                  <span className="text-lg font-bold">{field.soilType || 'N/A'}</span>
                 </div>
               </div>
             </CardContent>
@@ -120,8 +149,8 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
                 <h3 className="text-xl font-bold font-headline mb-2">No Yield Forecast Yet</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto">Generate an AI-powered forecast to see your predicted harvest and get actionable recommendations.</p>
               </div>
-              <Button onClick={handleGenerateInsight} disabled={isLoading} className="rounded-full px-8">
-                {isLoading ? <Loader2 className="animate-spin mr-2" /> : <TrendingUp className="w-4 h-4 mr-2" />}
+              <Button onClick={handleGenerateInsight} disabled={isLoadingInsight} className="rounded-full px-8">
+                {isLoadingInsight ? <Loader2 className="animate-spin mr-2" /> : <TrendingUp className="w-4 h-4 mr-2" />}
                 Generate AI Forecast
               </Button>
             </div>
@@ -191,9 +220,7 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
             <CardContent className="p-0">
                <div className="space-y-0">
                 {[
-                  { event: 'Fertilizer Applied', date: '10 days ago', note: 'Urea (50kg/acre)' },
-                  { event: 'Irrigation Cycle', date: '2 weeks ago', note: '3 hours coverage' },
-                  { event: 'Soil Test', date: 'Mar 15, 2024', note: 'pH 6.8, Nitrogen high' }
+                  { event: 'Field Registered', date: 'Just now', note: 'New acreage entry' }
                 ].map((item, i) => (
                   <div key={i} className="px-6 py-4 flex gap-4 border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0"></div>

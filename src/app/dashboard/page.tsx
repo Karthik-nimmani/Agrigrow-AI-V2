@@ -4,13 +4,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Sprout, 
   TrendingUp, 
   AlertTriangle, 
   Plus,
-  MapPin,
   Bot,
   CloudSun,
   Thermometer,
@@ -25,7 +23,6 @@ import { useRouter } from 'next/navigation';
 import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -58,17 +55,18 @@ export default function Dashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  // Real-time Fields Synchronization - using 'farmFields' to match backend.json
+  // Sync fields for stats calculation
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
   }, [firestore, user]);
 
-  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
+  const { data: fields } = useCollection(fieldsQuery);
 
-  const totalArea = fields?.reduce((acc, f) => acc + (Number(f.areaAmount) || 0), 0) || 0;
-  const potentialYield = fields?.reduce((acc, f) => acc + (Number(f.yieldHistoryAmount) || 0), 0) || 0;
-  const alertCount = fields?.filter(f => f.status === 'Alert' || f.status === 'Attention Needed').length || 0;
+  const totalArea = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
+  // Use a heuristic for potential yield if not explicitly in schema
+  const potentialYield = totalArea * 2500; 
+  const alertCount = 0; // Simplified for MVP
 
   const fetchWeatherIntelligence = async () => {
     if (!user) return;
@@ -76,7 +74,7 @@ export default function Dashboard() {
     try {
       const res = await aiWeatherBasedCropAdvice({
         location: weatherData.location,
-        cropType: fields?.length ? fields[0].currentCropTypeId : "Wheat & Maize",
+        cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat & Maize",
         currentConditions: {
           temperature: weatherData.temp,
           humidity: weatherData.humidity,
@@ -250,66 +248,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Fields Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold font-headline">My Fields</h2>
-          <AddFieldDialog />
-        </div>
-
-        {isFieldsLoading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="w-10 h-10 animate-spin text-primary/30" />
-          </div>
-        ) : !fields || fields.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed flex flex-col items-center gap-4">
-            <Sprout className="w-12 h-12 text-muted-foreground/20" />
-            <p className="text-muted-foreground">No fields synced. Add your first field to start monitoring.</p>
-            <AddFieldDialog trigger={<Button variant="outline" className="rounded-full">Register New Field</Button>} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {fields.map((field) => (
-              <Link key={field.id} href={`/fields/${field.id}`}>
-                <Card className="hover:shadow-md transition-all border-none bg-white overflow-hidden group cursor-pointer border border-transparent hover:border-primary/20">
-                  <CardContent className="p-0 flex">
-                    <div className="w-24 md:w-32 bg-muted/20 flex flex-col items-center justify-center gap-2 py-8 border-r">
-                      <Sprout className={`w-8 h-8 ${field.status === 'Alert' ? 'text-destructive/60' : 'text-primary/60'}`} />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center px-2">{field.currentCropTypeId}</span>
-                    </div>
-                    <div className="flex-1 p-6 relative">
-                      <div className={`absolute top-4 right-4 w-2 h-2 rounded-full ${field.status === 'Healthy' ? 'bg-green-400' : 'bg-amber-400 animate-pulse'}`} />
-                      <h3 className="text-xl font-bold font-headline mb-1 group-hover:text-primary transition-colors">{field.name}</h3>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
-                        <MapPin className="w-3 h-3" />
-                        <span>{field.locationDescription || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm mb-6">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground">Area</span>
-                          <span className="font-bold text-slate-700">{field.areaAmount} {field.areaUnit}</span>
-                        </div>
-                        <div className="h-4 w-px bg-muted-foreground/20" />
-                        <div className="flex flex-col">
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground">pH Level</span>
-                          <span className="font-bold text-slate-700">{field.soilPH}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between border-t pt-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Condition</span>
-                        <Badge variant={field.status === 'Healthy' ? 'secondary' : 'outline'} className="text-[9px] uppercase tracking-tighter">
-                          {field.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
         <Link href="/assistant">
@@ -317,11 +255,11 @@ export default function Dashboard() {
             <Bot className="w-6 h-6" />
           </Button>
         </Link>
-        <AddFieldDialog trigger={
+        <Link href="/fields/new">
           <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
             <Plus className="w-8 h-8" />
           </Button>
-        } />
+        </Link>
       </div>
     </div>
   );
