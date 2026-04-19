@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -110,7 +109,7 @@ export default function AssistantPage() {
       if (isQuotaError) {
         errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
       } else if (isNotFoundError) {
-        errorMessage = "The AI model configuration is temporarily unavailable. This is likely a maintenance issue with the Gemini service. Please try again in a few minutes.";
+        errorMessage = "The AI model configuration is temporarily unavailable. Standardizing to stable Gemini 1.5 Flash. Please try again in a few seconds.";
       }
 
       const errorMsgId = crypto.randomUUID();
