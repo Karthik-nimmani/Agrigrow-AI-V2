@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -20,7 +21,10 @@ import {
   MapPin,
   Edit3,
   Trash2,
-  Maximize
+  Maximize,
+  FileText,
+  Bug,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -34,12 +38,16 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -57,6 +65,7 @@ export default function Dashboard() {
   const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -81,7 +90,6 @@ export default function Dashboard() {
 
   const totalArea = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
   const potentialYield = totalArea * 2500; 
-  const alertCount = 0; 
 
   const fetchWeatherIntelligence = async () => {
     if (!user) return;
@@ -262,7 +270,7 @@ export default function Dashboard() {
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Alerts</span>
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-5xl font-bold text-slate-800 tracking-tight">{alertCount}</span>
+              <span className="text-5xl font-bold text-slate-800 tracking-tight">0</span>
               <span className="text-sm text-muted-foreground ml-2 font-medium">Critical</span>
             </div>
             <p className="text-sm font-bold text-destructive">Requires attention</p>
@@ -378,11 +386,40 @@ export default function Dashboard() {
             <Bot className="w-7 h-7" />
           </Button>
         </Link>
-        <Link href="/vision">
-          <Button size="icon" className="w-14 h-14 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
-            <Maximize className="w-7 h-7" />
-          </Button>
-        </Link>
+        
+        <Popover open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+          <PopoverTrigger asChild>
+            <Button size="icon" className={`w-14 h-14 rounded-full shadow-xl text-white transition-all hover:scale-110 ${isScannerOpen ? 'bg-primary/40' : 'bg-primary'}`}>
+              {isScannerOpen ? <X className="w-7 h-7" /> : <Maximize className="w-7 h-7" />}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" side="top" className="w-64 p-2 border-none shadow-2xl rounded-3xl mb-4 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="flex flex-col gap-1">
+              <Link href="/vision/soil">
+                <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-accent transition-colors cursor-pointer group">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-800">Scan Soil Report</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Analyze pH & nutrients</span>
+                  </div>
+                </div>
+              </Link>
+              <Link href="/vision/disease">
+                <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-accent transition-colors cursor-pointer group">
+                  <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                    <Bug className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-800">Disease Identification</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Diagnose problems</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
