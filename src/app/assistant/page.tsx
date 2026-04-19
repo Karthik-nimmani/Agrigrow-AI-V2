@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -102,14 +103,11 @@ export default function AssistantPage() {
 
     } catch (err: any) {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
-      const isConfigError = err.message?.includes('404') || err.message?.includes('not found');
       
-      let errorMessage = "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
+      let errorMessage = `AI Error: ${err.message || "I encountered an unexpected problem. Please try again."}`;
       
       if (isQuotaError) {
         errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
-      } else if (isConfigError) {
-        errorMessage = "I'm undergoing some configuration maintenance. My team is aware and fixing me right now!";
       }
 
       const errorMsgId = crypto.randomUUID();
