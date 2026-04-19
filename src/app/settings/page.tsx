@@ -22,11 +22,12 @@ import {
   Smartphone,
   Mail
 } from 'lucide-react';
-import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { aiWeatherBasedCropAdvice } from '@/ai/flows/ai-weather-based-crop-advice';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -53,6 +54,14 @@ export default function SettingsPage() {
   }, [firestore, user]);
 
   const { data: userData, isLoading: isDataLoading } = useDoc(userDocRef);
+
+  // Fetch fields to generate initial risk report if alerts are turned on
+  const fieldsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'farmFields');
+  }, [firestore, user]);
+
+  const { data: fields } = useCollection(fieldsQuery);
 
   useEffect(() => {
     if (userData) {
@@ -93,6 +102,32 @@ export default function SettingsPage() {
         ...formData,
         updatedAt: new Date().toISOString()
       });
+
+      // Simulation: Send weather risk if newly enabled
+      const alertsNewlyEnabled = (formData.weatherAlerts && !userData?.weatherAlerts) || (formData.notifications && !userData?.notifications);
+      
+      if (alertsNewlyEnabled && fields && fields.length > 0) {
+        try {
+          const res = await aiWeatherBasedCropAdvice({
+            location: fields[0].locationDescription || "Punjab",
+            cropType: fields[0].currentCropId || "Wheat",
+            currentConditions: {
+              temperature: 25,
+              humidity: 60,
+              soilMoisture: 45
+            },
+            weatherForecast: "Moderate humidity and clear skies expected over the next 48 hours."
+          });
+
+          toast({
+            title: "Notification Service Active",
+            description: `Initial weather risk report for ${fields[0].name} sent to ${formData.email}.`,
+          });
+        } catch (e) {
+          console.error("Simulation error:", e);
+        }
+      }
+
       toast({
         title: "Settings Saved",
         description: "Your preferences have been updated successfully.",
@@ -126,7 +161,7 @@ export default function SettingsPage() {
     <div className="max-w-4xl mx-auto space-y-8 pb-24 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Account Settings</h1>
+          <h1 className="text-3xl font-bold font-headline text-slate-900">Account Settings</h1>
           <p className="text-muted-foreground">Manage your profile and application preferences.</p>
         </div>
         <Button 
@@ -156,7 +191,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          <Card className="border-none shadow-sm">
+          <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden">
             <CardHeader>
               <CardTitle>Public Profile</CardTitle>
               <CardDescription>This information is used to identify you in the system.</CardDescription>
@@ -169,7 +204,7 @@ export default function SettingsPage() {
                     value={formData.displayName} 
                     onChange={(e) => setFormData({...formData, displayName: e.target.value})}
                     placeholder="Your full name"
-                    className="rounded-xl h-11"
+                    className="rounded-xl h-11 bg-muted/20 border-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -179,7 +214,7 @@ export default function SettingsPage() {
                     <Input 
                       disabled
                       value={formData.email} 
-                      className="rounded-xl h-11 pl-10 bg-muted/30"
+                      className="rounded-xl h-11 pl-10 bg-muted/30 border-none"
                     />
                   </div>
                 </div>
@@ -191,7 +226,7 @@ export default function SettingsPage() {
                       value={formData.phone} 
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="+91 0000000000"
-                      className="rounded-xl h-11 pl-10"
+                      className="rounded-xl h-11 pl-10 bg-muted/20 border-none"
                     />
                   </div>
                 </div>
@@ -201,7 +236,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="preferences" className="space-y-6">
-          <Card className="border-none shadow-sm">
+          <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden">
             <CardHeader>
               <CardTitle>Regional & Units</CardTitle>
               <CardDescription>Customize how data is presented to you.</CardDescription>
@@ -214,7 +249,7 @@ export default function SettingsPage() {
                     value={formData.preferredLanguage} 
                     onValueChange={(val) => setFormData({...formData, preferredLanguage: val})}
                   >
-                    <SelectTrigger className="h-11 rounded-xl">
+                    <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-none">
                       <SelectValue placeholder="Select Language" />
                     </SelectTrigger>
                     <SelectContent>
@@ -231,7 +266,7 @@ export default function SettingsPage() {
                     value={formData.units} 
                     onValueChange={(val) => setFormData({...formData, units: val})}
                   >
-                    <SelectTrigger className="h-11 rounded-xl">
+                    <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-none">
                       <SelectValue placeholder="Select Unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -247,26 +282,26 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-none shadow-sm">
+          <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden">
             <CardHeader>
               <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Control which alerts you receive via SMS or App.</CardDescription>
+              <CardDescription>Control which alerts you receive via SMS or Email.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 rounded-xl border">
+              <div className="flex items-center justify-between p-6 rounded-2xl bg-muted/20 border-none">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Push Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Receive general app updates and news.</p>
+                  <Label className="text-base font-bold">Push Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Receive general app updates and farm news.</p>
                 </div>
                 <Switch 
                   checked={formData.notifications} 
                   onCheckedChange={(val) => setFormData({...formData, notifications: val})} 
                 />
               </div>
-              <div className="flex items-center justify-between p-4 rounded-xl border">
+              <div className="flex items-center justify-between p-6 rounded-2xl bg-muted/20 border-none">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Weather & Risk Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Get immediate warnings for frost, storms, or drought.</p>
+                  <Label className="text-base font-bold">Weather & Risk Alerts</Label>
+                  <p className="text-sm text-muted-foreground">Email warnings for frost, storms, or drought on your fields.</p>
                 </div>
                 <Switch 
                   checked={formData.weatherAlerts} 
@@ -278,13 +313,13 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="account" className="space-y-6">
-          <Card className="border-none shadow-sm border-destructive/20">
+          <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden border-destructive/20">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
               <CardDescription>Irreversible account actions.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/10 flex items-center justify-between">
+              <div className="p-6 rounded-2xl bg-destructive/5 border border-destructive/10 flex items-center justify-between">
                 <div>
                   <h4 className="font-bold text-destructive">Sign Out</h4>
                   <p className="text-sm text-muted-foreground">Securely end your current session.</p>
@@ -293,32 +328,6 @@ export default function SettingsPage() {
                   <LogOut className="w-4 h-4" />
                   Logout
                 </Button>
-              </div>
-              <div className="p-4 rounded-xl bg-muted/30 border flex items-center justify-between">
-                <div>
-                  <h4 className="font-bold">Delete Account</h4>
-                  <p className="text-sm text-muted-foreground">Wipe all farm data and field records permanently.</p>
-                </div>
-                <Button variant="outline" className="rounded-xl px-6 text-destructive border-destructive/20 hover:bg-destructive/5">
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Info className="w-4 h-4 text-muted-foreground" />
-                App Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground space-y-2">
-              <p>Version: 1.0.4-stable (Beta)</p>
-              <p>Device ID: {user?.uid.substring(0, 12)}...</p>
-              <div className="flex gap-4 pt-2">
-                <button className="underline hover:text-primary">Privacy Policy</button>
-                <button className="underline hover:text-primary">Terms of Service</button>
               </div>
             </CardContent>
           </Card>

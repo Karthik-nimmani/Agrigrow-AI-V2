@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -155,7 +156,7 @@ export default function AssistantPage() {
               <Bot className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Agri-Bot Assistant</CardTitle>
+              <CardTitle className="text-lg text-slate-900">Agri-Bot Assistant</CardTitle>
               <CardDescription className="flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-primary" />
                 Real-time Farm Intelligence
@@ -202,7 +203,7 @@ export default function AssistantPage() {
                         ? 'bg-primary text-primary-foreground rounded-tr-none' 
                         : msg.isError 
                           ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
-                          : 'bg-white rounded-tl-none border border-border'
+                          : 'bg-white rounded-tl-none border border-border text-slate-800'
                     }`}>
                       {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
                       <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
