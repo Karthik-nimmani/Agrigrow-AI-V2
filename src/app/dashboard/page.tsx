@@ -21,14 +21,16 @@ import {
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function Dashboard() {
+  const router = useRouter();
   const { firestore } = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   
   const [weatherData, setWeatherData] = useState({
     temp: 24,
@@ -43,12 +45,18 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
-    // Hydration safe initial update
     setWeatherData(prev => ({
       ...prev,
       lastUpdated: new Date().toLocaleTimeString()
     }));
   }, []);
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   // Real-time Fields Synchronization
   const fieldsQuery = useMemoFirebase(() => {
@@ -58,11 +66,12 @@ export default function Dashboard() {
 
   const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
 
-  const totalArea = fields?.reduce((acc, f) => acc + (f.areaAmount || 0), 0) || 0;
-  const potentialYield = fields?.reduce((acc, f) => acc + (f.yieldHistoryAmount || 0), 0) || 0;
+  const totalArea = fields?.reduce((acc, f) => acc + (Number(f.areaAmount) || 0), 0) || 0;
+  const potentialYield = fields?.reduce((acc, f) => acc + (Number(f.yieldHistoryAmount) || 0), 0) || 0;
   const alertCount = fields?.filter(f => f.status === 'Alert' || f.status === 'Attention Needed').length || 0;
 
   const fetchWeatherIntelligence = async () => {
+    if (!user) return;
     setIsRefreshing(true);
     try {
       const res = await aiWeatherBasedCropAdvice({
@@ -86,10 +95,18 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (mounted && user) {
+    if (mounted && user && fields !== null) {
       fetchWeatherIntelligence();
     }
-  }, [fields, mounted, user]);
+  }, [mounted, user, fields]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

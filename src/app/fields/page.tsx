@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,10 +34,18 @@ import { collection, doc } from 'firebase/firestore';
 import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function FieldsPage() {
+  const router = useRouter();
   const { firestore } = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [search, setSearch] = useState('');
+
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -58,6 +67,14 @@ export default function FieldsPage() {
       description: `The field record has been removed.`,
     });
   };
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-8 px-4">
