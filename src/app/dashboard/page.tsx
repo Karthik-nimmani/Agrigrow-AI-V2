@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -34,10 +33,19 @@ export default function Dashboard() {
     humidity: 62,
     soilMoisture: 45,
     location: "Punjab, India",
-    lastUpdated: new Date().toLocaleTimeString()
+    lastUpdated: ""
   });
   const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setWeatherData(prev => ({
+      ...prev,
+      lastUpdated: new Date().toLocaleTimeString()
+    }));
+  }, []);
 
   // Real-time Fields Synchronization
   const fieldsQuery = useMemoFirebase(() => {
@@ -68,15 +76,17 @@ export default function Dashboard() {
       setWeatherAdvice(res);
       setWeatherData(prev => ({ ...prev, lastUpdated: new Date().toLocaleTimeString() }));
     } catch (err) {
-      console.error("Failed to fetch weather intelligence:", err);
+      // Error is handled centrally, but we stop the loading state
     } finally {
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchWeatherIntelligence();
-  }, [fields]);
+    if (mounted) {
+      fetchWeatherIntelligence();
+    }
+  }, [fields, mounted]);
 
   return (
     <div className="space-y-8">
@@ -111,7 +121,7 @@ export default function Dashboard() {
             disabled={isRefreshing}
             className="rounded-full h-8 px-3"
           >
-            {isRefreshing ? <RefreshCw className="w-3 h-3 animate-spin mr-2" /> : <RefreshCw className="w-3 h-3 mr-2" />}
+            {isRefreshing ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <RefreshCw className="w-3 h-3 mr-2" />}
             Sync Data
           </Button>
         </CardHeader>
@@ -136,7 +146,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">
-                <span>Last Updated: {weatherData.lastUpdated}</span>
+                <span>Last Updated: {mounted ? weatherData.lastUpdated : '...'}</span>
                 <span className="text-primary flex items-center gap-1">
                   <Wind className="w-3 h-3" /> 4.2 km/h NW
                 </span>
