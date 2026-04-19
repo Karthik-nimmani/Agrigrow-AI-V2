@@ -34,7 +34,7 @@ export default function AddNewFieldPage() {
   const [area, setArea] = useState('2');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
-  // Redirect if not logged in
+  // Redirect if definitely not logged in
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -43,8 +43,20 @@ export default function AddNewFieldPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Explicit check for user session
     if (!user || !firestore) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to add a field.' });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Authentication Required', 
+        description: 'Your session may have expired. Please log in again.' 
+      });
+      router.push('/login');
+      return;
+    }
+
+    if (!name.trim()) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please provide a field name.' });
       return;
     }
 
@@ -52,7 +64,7 @@ export default function AddNewFieldPage() {
 
     const fieldData = {
       userId: user.uid,
-      name,
+      name: name.trim(),
       currentCropId: cropType,
       locationDescription: location,
       soilType,
@@ -82,6 +94,9 @@ export default function AddNewFieldPage() {
       </div>
     );
   }
+
+  // Final fallback if redirect hasn't happened yet
+  if (!user) return null;
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
