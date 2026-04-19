@@ -97,11 +97,17 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err: any) {
-      // Handle Specific GenAI Errors
-      const isQuotaError = err.message?.includes('429') || err.message?.includes('quota');
-      const errorMessage = isQuotaError 
-        ? "I've reached my daily limit for advice. Please try again tomorrow, or upgrade your plan." 
-        : "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
+      // Handle Specific GenAI Errors (Quota, Connection, etc.)
+      const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
+      const isConfigError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
+      
+      let errorMessage = "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
+      
+      if (isQuotaError) {
+        errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
+      } else if (isConfigError) {
+        errorMessage = "I'm undergoing some configuration maintenance. My team is aware and fixing me right now!";
+      }
 
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
@@ -155,7 +161,7 @@ export default function AssistantPage() {
           </div>
           <div className="flex items-center gap-2">
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-32 h-9 border-none bg-white shadow-sm rounded-xl">
+              <SelectTrigger className="w-32 h-9 border-none bg-white shadow-sm rounded-xl text-xs">
                 <Globe className="w-3 h-3 mr-2 text-muted-foreground" />
                 <SelectValue placeholder="Language" />
               </SelectTrigger>
