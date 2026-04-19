@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Sprout,
   Trash2,
-  Loader2
+  Loader2,
+  MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -63,12 +64,12 @@ export default function FieldsPage() {
     const fieldRef = doc(firestore, 'users', user.uid, 'fields', fieldId);
     deleteDocumentNonBlocking(fieldRef);
     toast({
-      title: "Field deleted",
-      description: `The field record has been removed.`,
+      title: "Field removed",
+      description: `The field record has been successfully deleted.`,
     });
   };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -76,16 +77,18 @@ export default function FieldsPage() {
     );
   }
 
+  if (!user) return null;
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-8 px-4">
+    <div className="max-w-5xl mx-auto space-y-8 py-8 px-4 pb-24">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">My Fields</h1>
-          <p className="text-muted-foreground text-lg">Manage and track your cultivation areas.</p>
+          <p className="text-muted-foreground text-lg">Manage and monitor your farm acreage.</p>
         </div>
         <AddFieldDialog trigger={
-          <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90">
+          <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90 shadow-md">
             <Plus className="w-5 h-5" /> Add New Field
           </Button>
         } />
@@ -96,13 +99,13 @@ export default function FieldsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input 
-            placeholder="Search fields..." 
+            placeholder="Search by field name..." 
             className="pl-12 h-14 rounded-xl border-none shadow-sm bg-white focus-visible:ring-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button variant="ghost" size="icon" className="h-14 w-14 rounded-xl bg-white shadow-sm border-none text-muted-foreground hover:text-primary">
+        <Button variant="ghost" size="icon" className="h-14 w-14 rounded-xl bg-white shadow-sm border-none text-muted-foreground hover:text-primary transition-colors">
           <Filter className="w-6 h-6" />
         </Button>
       </div>
@@ -112,20 +115,22 @@ export default function FieldsPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Syncing your fields...</p>
+            <p className="text-muted-foreground font-medium">Syncing with farm records...</p>
           </div>
         ) : filteredFields.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed flex flex-col items-center gap-4">
-            <Sprout className="w-12 h-12 text-muted-foreground/30" />
-            <div className="space-y-1">
-              <h3 className="font-bold text-xl">No fields found</h3>
-              <p className="text-muted-foreground">Start by adding your first cultivation area.</p>
+          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed flex flex-col items-center gap-5 border-muted-foreground/20">
+            <div className="p-4 bg-muted/30 rounded-full">
+              <Sprout className="w-12 h-12 text-muted-foreground/30" />
             </div>
-            <AddFieldDialog trigger={<Button variant="outline" className="rounded-xl">Add New Field</Button>} />
+            <div className="space-y-1">
+              <h3 className="font-bold text-2xl text-slate-800">No Fields Registered</h3>
+              <p className="text-muted-foreground max-w-xs mx-auto">Add your first cultivation area to start tracking soil health and yields.</p>
+            </div>
+            <AddFieldDialog trigger={<Button variant="outline" className="rounded-xl px-8 h-12 border-primary text-primary hover:bg-primary/5">Register Your First Field</Button>} />
           </div>
         ) : (
           filteredFields.map((field) => (
-            <Card key={field.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden">
+            <Card key={field.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden border border-transparent hover:border-primary/10">
               <CardContent className="p-0 flex">
                 {/* Field Information Container */}
                 <div className="flex-1 flex items-center p-6 gap-6">
@@ -136,42 +141,47 @@ export default function FieldsPage() {
 
                   {/* Text Content */}
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                       <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
                       <div className="flex gap-2">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg border-none text-[10px] uppercase">
                           {field.areaAmount} {field.areaUnit}
                         </Badge>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg border-none text-[10px] uppercase">
                           pH {field.soilPH}
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-muted-foreground text-sm font-medium">
-                      Crop: <span className="font-bold text-slate-900">{field.currentCropTypeId}</span>
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-muted-foreground text-sm font-medium flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3" /> {field.locationDescription}
+                      </p>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        Current Crop: <span className="font-bold text-primary">{field.currentCropTypeId}</span>
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Actions Sidebar */}
-                <div className="w-16 flex flex-col items-center justify-between py-4 border-l border-slate-50">
+                <div className="w-20 flex flex-col items-center justify-between py-6 border-l border-slate-50 bg-slate-50/30">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-transparent">
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
                         <Trash2 className="w-5 h-5" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="rounded-2xl">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Field?</AlertDialogTitle>
+                        <AlertDialogTitle>Remove Field Record?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will permanently remove "{field.name}" and all associated data. This action cannot be undone.
+                          This will permanently delete "{field.name}" and all historical data. This action is irreversible.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(field.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Delete
+                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(field.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
+                          Delete Permanently
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
