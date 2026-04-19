@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { agriBotFarmAssistant } from '@/ai/flows/agri-bot-farm-assistant';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, limit, doc, serverTimestamp, getDocs, writeBatch } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, query, orderBy, limit, doc, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 export default function AssistantPage() {
@@ -31,14 +31,12 @@ export default function AssistantPage() {
   const [isBotThinking, setIsBotThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auth check
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  // Chat messages query
   const messagesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -50,7 +48,6 @@ export default function AssistantPage() {
 
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
-  // Auto scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -65,13 +62,15 @@ export default function AssistantPage() {
     setInput('');
     setIsBotThinking(true);
 
+    const timestamp = new Date().toISOString();
+
     // 1. Save User Message
     const userMsgId = crypto.randomUUID();
     const userMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', userMsgId);
     setDocumentNonBlocking(userMsgRef, {
       id: userMsgId,
       userId: user.uid,
-      timestamp: new Date().toISOString(),
+      timestamp,
       senderType: 'user',
       messageText: userMessage,
       language: language
@@ -97,8 +96,7 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err) {
-      console.error(err);
-      // Save error message as bot response
+      // Error message saved as bot response for visibility
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
       setDocumentNonBlocking(errorMsgRef, {
@@ -106,7 +104,7 @@ export default function AssistantPage() {
         userId: user.uid,
         timestamp: new Date().toISOString(),
         senderType: 'bot',
-        messageText: "I'm sorry, I'm having trouble processing your request. Please check your connection or try again later.",
+        messageText: "I'm sorry, I'm having trouble processing your request. Please check your connection.",
         language: language
       }, { merge: true });
     } finally {
@@ -116,19 +114,12 @@ export default function AssistantPage() {
 
   const clearChat = async () => {
     if (!user || !firestore || !messages) return;
-    
-    // Batch delete chat history
     const batch = writeBatch(firestore);
     messages.forEach(msg => {
       const msgRef = doc(firestore, 'users', user.uid, 'chatMessages', msg.id);
       batch.delete(msgRef);
     });
-    
-    try {
-      await batch.commit();
-    } catch (err) {
-      console.error("Failed to clear chat:", err);
-    }
+    await batch.commit();
   };
 
   if (isUserLoading || isChatLoading) {
@@ -185,8 +176,8 @@ export default function AssistantPage() {
             </div>
           )}
 
-          {messages?.map((msg, i) => (
-            <div key={msg.id || i} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+          {messages?.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
               <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.senderType === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-1 ${msg.senderType === 'user' ? 'bg-primary/10' : 'bg-accent/20'}`}>
                   {msg.senderType === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-accent-foreground" />}

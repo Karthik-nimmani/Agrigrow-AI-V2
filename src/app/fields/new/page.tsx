@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -57,7 +56,6 @@ export default function AddNewFieldPage() {
         setLongitude(lng);
         
         try {
-          // Attempt to get a readable address using OSM Nominatim (free for low volume)
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
           const data = await res.json();
           if (data && data.display_name) {
@@ -76,22 +74,11 @@ export default function AddNewFieldPage() {
         }
       },
       (error) => {
-        let errorMsg = 'Could not access your location. Please enter manually.';
-        
-        // Detailed error messages based on Geolocation error codes
-        if (error.code === 1) {
-          errorMsg = 'Location permission denied. Please allow access in browser settings.';
-        } else if (error.code === 2) {
-          errorMsg = 'Location unavailable. Please check your signal and try again.';
-        } else if (error.code === 3) {
-          errorMsg = 'Location detection timed out. Please try again or enter manually.';
-        }
-
         setIsDetecting(false);
         toast({ 
           variant: 'destructive', 
           title: 'Detection Failed', 
-          description: errorMsg 
+          description: 'Could not access your location. Please enter manually.' 
         });
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
@@ -101,23 +88,13 @@ export default function AddNewFieldPage() {
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
-    } else if (user && !location && !latitude) {
-      // Auto-trigger location detection on mount
-      detectLocation();
     }
-  }, [user, isUserLoading, router, detectLocation, location, latitude]);
+  }, [user, isUserLoading, router]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !firestore) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Session Unavailable', 
-        description: 'Please wait for the system to sync or log in again.' 
-      });
-      return;
-    }
+    if (!user || !firestore) return;
 
     if (!name.trim()) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please provide a field name.' });
@@ -146,6 +123,7 @@ export default function AddNewFieldPage() {
 
     try {
       const docRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
+      // Using setDocumentNonBlocking to satisfy security rules that check resource.data.id == id
       setDocumentNonBlocking(docRef, fieldData, { merge: true });
       
       toast({ title: 'Field Added', description: `${name} has been successfully registered.` });
@@ -230,11 +208,6 @@ export default function AddNewFieldPage() {
                     className="h-14 pl-10 rounded-xl bg-muted/30 border-none focus-visible:ring-primary"
                   />
                 </div>
-                {latitude && longitude && (
-                  <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">
-                    Coordinates: {latitude.toFixed(6)}, {longitude.toFixed(6)}
-                  </p>
-                )}
               </div>
             </div>
 
