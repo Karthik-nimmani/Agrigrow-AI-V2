@@ -73,12 +73,7 @@ Based on this information, identify any immediate risks to the crop, such as fro
 
 If you detect a significant risk, populate the 'alert' field with a concise warning message. If there's no immediate critical risk but general advice is applicable, leave 'alert' empty.
 Always provide detailed 'advice' regardless of whether an alert is issued.
-Set 'riskDetected' to true if an alert is issued, otherwise set it to false.
-
-Example:
-If temperature is near freezing (e.g., <2°C) and forecast predicts frost for a sensitive crop like tomatoes, issue a "Frost Warning" alert and advise on protective measures.
-If soil moisture is low (e.g., <20%) and no rain is forecast for drought-sensitive crops, issue an "Irrigation Recommended" alert and advise on watering schedules.
-If conditions are ideal, provide general best practices or positive reinforcement.`,
+Set 'riskDetected' to true if an alert is issued, otherwise set it to false.`,
 });
 
 const aiWeatherBasedCropAdviceFlow = ai.defineFlow(
@@ -89,6 +84,9 @@ const aiWeatherBasedCropAdviceFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await aiWeatherBasedCropAdvicePrompt(input);
-    return output!;
+    if (!output) {
+      return { advice: "Conditions are stable. Continue regular monitoring.", riskDetected: false };
+    }
+    return output;
   }
 );
