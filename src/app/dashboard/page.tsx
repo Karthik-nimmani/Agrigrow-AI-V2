@@ -1,188 +1,134 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  CloudSun, 
+  Sprout, 
   TrendingUp, 
   AlertTriangle, 
-  Map as MapIcon, 
   Plus,
-  ArrowRight
+  MapPin,
+  Bot
 } from 'lucide-react';
 import Link from 'next/link';
-import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
+
+const FIELDS = [
+  { id: 1, name: 'Maize Field', crop: 'Maize', location: 'Local Region', area: '2.5 Acres', ph: '6.2', status: 'Analysis Required' },
+  { id: 2, name: 'Wheat Field', crop: 'Wheat', location: 'Local Region', area: '1.8 Acres', ph: '5.8', status: 'Analysis Required' },
+  { id: 3, name: 'Sakhinetipalli', crop: 'Maize', location: 'Local Region', area: '2 Acres', ph: '6.5', status: 'Analysis Required' },
+  { id: 4, name: 'EX', crop: 'Rice', location: 'Lovely Professional University', area: '2.3 Acres', ph: '5.4', status: 'Analysis Required' },
+];
 
 export default function Dashboard() {
-  const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchWeatherAdvice() {
-      try {
-        const advice = await aiWeatherBasedCropAdvice({
-          location: "Punjab, India",
-          cropType: "Wheat",
-          currentConditions: {
-            temperature: 24,
-            humidity: 65,
-            soilMoisture: 42
-          },
-          weatherForecast: "Sunny with light winds, 10% chance of rain in the next 48 hours.",
-          cropGrowthStage: "Tillering"
-        });
-        setWeatherAdvice(advice);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchWeatherAdvice();
-  }, []);
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold font-headline">Welcome back, Farmer!</h1>
-          <p className="text-muted-foreground">Here's what's happening on your farm today.</p>
-        </div>
-        <Link href="/fields/new">
-          <Button className="rounded-full flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add New Field
-          </Button>
-        </Link>
+      <div>
+        <h1 className="text-4xl font-bold font-headline mb-2">Welcome back, Farmer!</h1>
+        <p className="text-muted-foreground text-lg">Monitoring your farm's performance across 4 fields.</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <MapIcon className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Fields</p>
-                <p className="text-2xl font-bold">4</p>
-              </div>
+        <Card className="border-none shadow-sm bg-primary text-white overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4 opacity-90">
+              <Sprout className="w-5 h-5" />
+              <span className="text-xs font-bold uppercase tracking-wider">Total Area</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl font-bold">8.6</span>
+              <span className="text-xl font-medium opacity-80">Acres</span>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <CloudSun className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Active Alerts</p>
-                <p className="text-2xl font-bold text-blue-600">{weatherAdvice?.riskDetected ? '1' : '0'}</p>
-              </div>
+
+        <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4 text-primary">
+              <TrendingUp className="w-5 h-5 text-green-500" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Potential Yield</span>
             </div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-5xl font-bold text-slate-800">5,900</span>
+              <span className="text-xl font-medium text-slate-500">kg</span>
+            </div>
+            <p className="text-sm font-bold text-green-600">+15.7% vs Last Season</p>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-full">
-                <TrendingUp className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Yield Forecast</p>
-                <p className="text-2xl font-bold text-green-600">85%</p>
-              </div>
+
+        <Card className="border-none shadow-sm bg-white overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center gap-3 mb-4 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Alerts</span>
             </div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-5xl font-bold text-slate-800">4</span>
+            </div>
+            <p className="text-sm font-bold text-destructive">Needs AI Analysis</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Weather Intelligence */}
-        <Card className="lg:col-span-2 border-none shadow-md overflow-hidden bg-white">
-          <div className="bg-primary/5 p-6 border-b flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <CloudSun className="w-6 h-6 text-primary" />
-              <div>
-                <CardTitle className="text-lg">Meteorological Intelligence</CardTitle>
-                <CardDescription>Live Punjab Farm Conditions</CardDescription>
-              </div>
-            </div>
-            {weatherAdvice?.riskDetected && (
-              <Badge variant="destructive" className="animate-pulse">Active Warning</Badge>
-            )}
-          </div>
-          <CardContent className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Temp</p>
-                    <p className="text-xl font-bold">24°C</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Humidity</p>
-                    <p className="text-xl font-bold">65%</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Moisture</p>
-                    <p className="text-xl font-bold">42%</p>
-                  </div>
-                </div>
+      {/* Fields Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold font-headline">Active Fields</h2>
+          <Link href="/fields/new">
+            <Button variant="outline" className="rounded-lg flex items-center gap-2 border-muted-foreground/20">
+              <Plus className="w-4 h-4" /> Add New Field
+            </Button>
+          </Link>
+        </div>
 
-                {weatherAdvice?.alert && (
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 items-start">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-bold text-amber-900">{weatherAdvice.alert}</p>
-                      <p className="text-sm text-amber-800 opacity-90">{weatherAdvice.advice}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {FIELDS.map((field) => (
+            <Link key={field.id} href={`/fields/${field.id}`}>
+              <Card className="hover:shadow-md transition-all border-none bg-white overflow-hidden group cursor-pointer">
+                <CardContent className="p-0 flex">
+                  {/* Left Icon Panel */}
+                  <div className="w-32 bg-muted/30 flex flex-col items-center justify-center gap-2 py-8 border-r">
+                    <Sprout className="w-8 h-8 text-primary/60" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{field.crop}</span>
+                  </div>
+                  
+                  {/* Right Info Panel */}
+                  <div className="flex-1 p-6 relative">
+                    <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-red-400" />
+                    <h3 className="text-xl font-bold font-headline mb-1 group-hover:text-primary transition-colors">{field.name}</h3>
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-6">
+                      <MapPin className="w-3 h-3" />
+                      <span>{field.location}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm mb-6 text-muted-foreground">
+                      <span className="font-bold text-slate-700">{field.area}</span>
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+                      <span className="font-bold text-slate-700">pH {field.ph}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-4">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-destructive">{field.status}</span>
                     </div>
                   </div>
-                )}
-                {!weatherAdvice?.alert && (
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-                    <p className="text-sm text-green-800">{weatherAdvice?.advice || "No active risks. Optimal conditions for wheat tillering."}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Links / Recent Fields */}
-        <Card className="border-none shadow-md bg-white">
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Fields</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { name: 'North Wheat Field', crop: 'Wheat', area: '12 Acres' },
-              { name: 'South Orchard', crop: 'Apple', area: '5 Acres' },
-              { name: 'Riverside Corn', crop: 'Corn', area: '20 Acres' }
-            ].map((field, i) => (
-              <Link key={i} href="/fields/1" className="block group">
-                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors border">
-                  <div>
-                    <p className="font-medium group-hover:text-primary transition-colors">{field.name}</p>
-                    <p className="text-xs text-muted-foreground">{field.crop} • {field.area}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-all translate-x-0 group-hover:translate-x-1" />
-                </div>
-              </Link>
-            ))}
-            <Link href="/fields">
-              <Button variant="outline" className="w-full mt-2">View All Fields</Button>
+                </CardContent>
+              </Card>
             </Link>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-8 right-8 flex flex-col gap-4">
+        <Button size="icon" className="w-12 h-12 rounded-full bg-white shadow-lg text-primary hover:bg-muted border border-muted">
+          <Bot className="w-6 h-6" />
+        </Button>
+        <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90">
+          <Plus className="w-8 h-8" />
+        </Button>
       </div>
     </div>
   );
