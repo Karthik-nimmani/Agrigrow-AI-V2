@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -22,7 +23,7 @@ export default function AddNewFieldPage() {
   const { toast } = useToast();
   
   // Hooks for Firebase services and user session
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   
   const [isSubmitting, setIsSubmitting] = useState(false);

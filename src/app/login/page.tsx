@@ -22,12 +22,12 @@ export default function LoginPage() {
   
   const router = useRouter();
   const auth = useAuth();
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && !isUserLoading) {
+    if (user && !isUserLoading && firestore) {
       const userRef = doc(firestore, 'users', user.uid);
       
       const profileData: any = {
