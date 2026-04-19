@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import DashboardLayout from '@/app/dashboard/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,18 +9,17 @@ import {
   Plus, 
   Search, 
   Filter, 
-  MapPin, 
-  Calendar, 
   ChevronRight,
-  Droplets,
-  Scale
+  Sprout,
+  Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 
 const INITIAL_FIELDS = [
-  { id: 1, name: 'North Wheat Field', crop: 'Wheat', area: 12, unit: 'Acres', ph: 6.8, lastYield: '2.5 tons/acre', status: 'Healthy' },
-  { id: 2, name: 'South Apple Orchard', crop: 'Apple', area: 5, unit: 'Acres', ph: 6.2, lastYield: '10 tons total', status: 'Alert' },
-  { id: 3, name: 'Riverside Corn', crop: 'Corn', area: 20, unit: 'Acres', ph: 7.1, lastYield: '180 bushels/acre', status: 'Healthy' },
+  { id: 1, name: 'Maize', area: '2.5 Acres', ph: '6.2', lastSeason: '1200 kg', status: 'Healthy' },
+  { id: 2, name: 'Wheat', area: '1.8 Acres', ph: '5.8', lastSeason: '900 kg', status: 'Alert' },
+  { id: 3, name: 'Maize', area: '2 Acres', ph: '6.5', lastSeason: '1000 kg', status: 'Healthy' },
+  { id: 4, name: 'Rice', area: '2.3 Acres', ph: '5.4', lastSeason: '2000 kg', status: 'Alert' },
 ];
 
 export default function FieldsPage() {
@@ -29,78 +27,82 @@ export default function FieldsPage() {
   const [search, setSearch] = useState('');
 
   const filteredFields = fields.filter(f => 
-    f.name.toLowerCase().includes(search.toLowerCase()) || 
-    f.crop.toLowerCase().includes(search.toLowerCase())
+    f.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8 py-8">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">My Fields</h1>
-          <p className="text-muted-foreground">Manage and track your crop health across all areas.</p>
+          <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">My Fields</h1>
+          <p className="text-muted-foreground text-lg">Manage and track your cultivation areas.</p>
         </div>
-        <Button className="rounded-full flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Field
+        <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90">
+          <Plus className="w-5 h-5" /> Add New Field
         </Button>
       </div>
 
+      {/* Search and Filter Section */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input 
-            placeholder="Search fields or crops..." 
-            className="pl-10"
+            placeholder="Search fields..." 
+            className="pl-12 h-14 rounded-xl border-none shadow-sm bg-white focus-visible:ring-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
-          <Filter className="w-4 h-4" /> Filter
+        <Button variant="ghost" size="icon" className="h-14 w-14 rounded-xl bg-white shadow-sm border-none text-muted-foreground hover:text-primary">
+          <Filter className="w-6 h-6" />
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Field List */}
+      <div className="space-y-4">
         {filteredFields.map((field) => (
-          <Link key={field.id} href={`/fields/${field.id}`}>
-            <Card className="hover:shadow-lg transition-all border-none bg-white group cursor-pointer h-full">
-              <CardContent className="p-0">
-                <div className="h-24 bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                  <MapPin className="w-8 h-8 text-primary/40" />
+          <Card key={field.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden">
+            <CardContent className="p-0 flex">
+              {/* Field Information Container */}
+              <div className="flex-1 flex items-center p-6 gap-6">
+                {/* Icon Container */}
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                  <Sprout className="w-8 h-8 text-primary" />
                 </div>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold font-headline group-hover:text-primary transition-colors">{field.name}</h3>
-                      <Badge variant="secondary" className="mt-1">{field.crop}</Badge>
-                    </div>
-                    <Badge className={field.status === 'Healthy' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}>
-                      {field.status}
-                    </Badge>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4 py-4 border-y border-dashed text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Scale className="w-4 h-4" />
-                      <span>{field.area} {field.unit}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Droplets className="w-4 h-4" />
-                      <span>pH {field.ph}</span>
+                {/* Text Content */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
+                    <div className="flex gap-2">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                        {field.area}
+                      </Badge>
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                        pH {field.ph}
+                      </Badge>
                     </div>
                   </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>Last yield: {field.lastYield}</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                  </div>
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Last Season: <span className="font-bold text-slate-900">{field.lastSeason}</span>
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </Link>
+              </div>
+
+              {/* Actions Sidebar */}
+              <div className="w-16 flex flex-col items-center justify-between py-4 border-l border-slate-50">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-transparent">
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+                <Link href={`/fields/${field.id}`}>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all">
+                    <ChevronRight className="w-6 h-6" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
