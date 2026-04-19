@@ -62,7 +62,6 @@ const aiActionableCropRecommendationsFlow = ai.defineFlow(
   async (input) => {
     const {output} = await aiActionableCropRecommendationsPrompt(input);
     if (!output) {
-      // Return a safe default instead of throwing to prevent complete UI failure
       return { recommendations: ["Maintain current practices and monitor soil moisture."] };
     }
     return output;

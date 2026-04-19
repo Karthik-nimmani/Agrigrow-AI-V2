@@ -13,7 +13,8 @@ import {
   Bot,
   RefreshCw,
   Sparkles,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { agriBotFarmAssistant } from '@/ai/flows/agri-bot-farm-assistant';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -95,8 +96,13 @@ export default function AssistantPage() {
         language: language
       }, { merge: true });
 
-    } catch (err) {
-      // Error message saved as bot response for visibility
+    } catch (err: any) {
+      // Handle Specific GenAI Errors
+      const isQuotaError = err.message?.includes('429') || err.message?.includes('quota');
+      const errorMessage = isQuotaError 
+        ? "I've reached my daily limit for advice. Please try again tomorrow, or upgrade your plan." 
+        : "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
+
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
       setDocumentNonBlocking(errorMsgRef, {
@@ -104,8 +110,9 @@ export default function AssistantPage() {
         userId: user.uid,
         timestamp: new Date().toISOString(),
         senderType: 'bot',
-        messageText: "I'm sorry, I'm having trouble processing your request. Please check your connection.",
-        language: language
+        messageText: errorMessage,
+        language: language,
+        isError: true
       }, { merge: true });
     } finally {
       setIsBotThinking(false);
@@ -182,7 +189,14 @@ export default function AssistantPage() {
                 <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-1 ${msg.senderType === 'user' ? 'bg-primary/10' : 'bg-accent/20'}`}>
                   {msg.senderType === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-accent-foreground" />}
                 </div>
-                <div className={`p-4 rounded-2xl shadow-sm ${msg.senderType === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-muted rounded-tl-none'}`}>
+                <div className={`p-4 rounded-2xl shadow-sm ${
+                  msg.senderType === 'user' 
+                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                    : msg.isError 
+                      ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
+                      : 'bg-muted rounded-tl-none'
+                }`}>
+                  {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
                   <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
                 </div>
               </div>
