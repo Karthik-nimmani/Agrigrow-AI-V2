@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Sprout, MapPin, Save, Loader2 } from 'lucide-react';
+import { CalendarIcon, Sprout, MapPin, Save, Loader2, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -26,11 +26,14 @@ export default function AddNewFieldPage() {
   const { user, isUserLoading } = useUser();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
 
   // Form State
   const [name, setName] = useState('');
   const [cropType, setCropType] = useState('Maize');
   const [location, setLocation] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
   const [soilType, setSoilType] = useState('Loamy');
   const [ph, setPh] = useState([6.5]);
   const [area, setArea] = useState('2');
@@ -41,6 +44,55 @@ export default function AddNewFieldPage() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
+
+  const detectLocation = () => {
+    if (!("geolocation" in navigator)) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Not Supported', 
+        description: 'Geolocation is not supported by your browser.' 
+      });
+      return;
+    }
+
+    setIsDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setLatitude(lat);
+        setLongitude(lng);
+        
+        try {
+          // Attempt to get a readable address using OSM Nominatim (free for low volume)
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+          const data = await res.json();
+          if (data && data.display_name) {
+            setLocation(data.display_name);
+          } else {
+            setLocation(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+          }
+        } catch (err) {
+          setLocation(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+        } finally {
+          setIsDetecting(false);
+          toast({ 
+            title: 'Location Detected', 
+            description: `Coordinates (${lat.toFixed(4)}, ${lng.toFixed(4)}) successfully captured.` 
+          });
+        }
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        setIsDetecting(false);
+        toast({ 
+          variant: 'destructive', 
+          title: 'Detection Failed', 
+          description: 'Could not access your location. Please check permissions or enter manually.' 
+        });
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +113,6 @@ export default function AddNewFieldPage() {
 
     setIsSubmitting(true);
 
-    // Generate ID locally to ensure it matches the path in security rules
     const fieldId = crypto.randomUUID();
 
     const fieldData = {
@@ -70,6 +121,8 @@ export default function AddNewFieldPage() {
       name: name.trim(),
       currentCropId: cropType,
       locationDescription: location,
+      latitude: latitude,
+      longitude: longitude,
       soilType,
       soilPH: ph[0],
       area: Number(area),
@@ -79,7 +132,6 @@ export default function AddNewFieldPage() {
     };
 
     try {
-      // Use setDocumentNonBlocking with the specific document path to satisfy security rules
       const docRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
       setDocumentNonBlocking(docRef, fieldData, { merge: true });
       
@@ -144,7 +196,20 @@ export default function AddNewFieldPage() {
                 </Select>
               </div>
               <div className="space-y-3">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Location</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Location</Label>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={detectLocation}
+                    disabled={isDetecting}
+                    className="h-6 text-[10px] font-bold text-primary hover:text-primary/80 flex items-center gap-1"
+                  >
+                    {isDetecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />}
+                    Detect
+                  </Button>
+                </div>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input 
@@ -154,6 +219,11 @@ export default function AddNewFieldPage() {
                     className="h-14 pl-10 rounded-xl bg-muted/30 border-none focus-visible:ring-primary"
                   />
                 </div>
+                {latitude && longitude && (
+                  <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">
+                    Coordinates: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                  </p>
+                )}
               </div>
             </div>
 
