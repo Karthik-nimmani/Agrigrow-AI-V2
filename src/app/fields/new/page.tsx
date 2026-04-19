@@ -19,9 +19,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function AddNewFieldPage() {
   const router = useRouter();
+  const { toast } = useToast();
+  
+  // Hooks for Firebase services and user session
   const { firestore } = useFirestore();
   const { user, isUserLoading } = useUser();
-  const { toast } = useToast();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
@@ -33,7 +36,7 @@ export default function AddNewFieldPage() {
   const [area, setArea] = useState('2');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
-  // Redirect if definitely not logged in
+  // Redirect if definitely not logged in after loading finishes
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -43,7 +46,7 @@ export default function AddNewFieldPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Explicit check for user session and firestore availability
+    // Safety check for user session and firestore availability
     if (!user || !firestore) {
       toast({ 
         variant: 'destructive', 
@@ -61,6 +64,7 @@ export default function AddNewFieldPage() {
     setIsSubmitting(true);
 
     const fieldData = {
+      id: crypto.randomUUID(), // Local ID generation for consistency
       userId: user.uid,
       name: name.trim(),
       currentCropId: cropType,
@@ -81,10 +85,12 @@ export default function AddNewFieldPage() {
       router.push('/fields');
     } catch (error) {
       console.error('Error adding field:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not register field. Please try again.' });
       setIsSubmitting(false);
     }
   };
 
+  // Show loading state while auth session is initializing
   if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -93,6 +99,7 @@ export default function AddNewFieldPage() {
     );
   }
 
+  // Prevent rendering if not authenticated
   if (!user) return null;
 
   return (
