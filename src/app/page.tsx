@@ -7,22 +7,6 @@ import { Sprout, ShieldCheck, BarChart3, CloudSun, ScanLine, MessageSquare } fro
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Navigation */}
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/50 backdrop-blur-sm sticky top-0 z-50">
-        <Link className="flex items-center justify-center gap-2" href="/">
-          <Sprout className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold font-headline text-primary">AgriGrow AI</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:text-primary transition-colors" href="#features">
-            Features
-          </Link>
-          <Link className="text-sm font-medium hover:text-primary transition-colors" href="/login">
-            Login
-          </Link>
-        </nav>
-      </header>
-
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-20 px-4 md:py-32 lg:py-48 overflow-hidden">
@@ -76,7 +60,7 @@ export default function LandingPage() {
                 description="Real-time alerts for frost, irrigation timing, and storm risks at your exact location."
               />
               <FeatureCard 
-                icon={<MessageSquare className="w-8 h-8 text-primary" />}
+                icon={<MessageSquare className="text-primary h-8 w-8" />}
                 title="AI Farm Assistant"
                 description="Ask 'Agri-Bot' any farming question in multiple languages for immediate advice."
               />
