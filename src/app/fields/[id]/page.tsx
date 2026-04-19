@@ -11,7 +11,8 @@ import {
   Droplets, 
   Loader2, 
   ChevronRight,
-  Info
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -19,12 +20,13 @@ import { aiYieldForecastWithExplanation, type YieldForecastOutput } from '@/ai/f
 import { aiActionableCropRecommendations, type AiActionableCropRecommendationsOutput } from '@/ai/flows/ai-actionable-crop-recommendations-flow';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function FieldDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const firestore = useFirestore();
   const { user } = useUser();
-  const router = useRouter();
+  const { toast } = useToast();
   
   const [forecast, setForecast] = useState<YieldForecastOutput | null>(null);
   const [recommendations, setRecommendations] = useState<AiActionableCropRecommendationsOutput | null>(null);
@@ -62,8 +64,16 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
         yieldForecast: `Predicted ${fRes.predictedYieldValue} ${fRes.predictedYieldUnit}`
       });
       setRecommendations(rRes);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const isQuotaError = err.message?.includes('429') || err.message?.includes('quota');
+      toast({
+        variant: 'destructive',
+        title: isQuotaError ? 'AI Quota Exceeded' : 'Generation Error',
+        description: isQuotaError 
+          ? 'The AI is currently at capacity. Please try again in a few minutes.' 
+          : 'Failed to generate field insights. Please check your data and try again.',
+      });
     } finally {
       setIsLoadingInsight(false);
     }
@@ -87,7 +97,7 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 p-4 md:p-8">
       <div className="flex items-center gap-4">
         <Link href="/fields">
           <Button variant="ghost" size="icon" className="rounded-full">
@@ -112,7 +122,9 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
                   <CardTitle className="text-lg">Field Summary</CardTitle>
                   <CardDescription>Current agronomic metrics</CardDescription>
                 </div>
-                <Button variant="outline" size="sm">Edit Details</Button>
+                <Link href={`/fields`}>
+                   <Button variant="outline" size="sm">Manage Field</Button>
+                </Link>
               </div>
             </CardHeader>
             <CardContent className="p-6">
