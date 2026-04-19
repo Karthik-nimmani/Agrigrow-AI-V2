@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -44,14 +43,13 @@ export default function AddNewFieldPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Explicit check for user session
+    // Explicit check for user session and firestore availability
     if (!user || !firestore) {
       toast({ 
         variant: 'destructive', 
-        title: 'Authentication Required', 
-        description: 'Your session may have expired. Please log in again.' 
+        title: 'Session Unavailable', 
+        description: 'Please wait for the system to sync or log in again.' 
       });
-      router.push('/login');
       return;
     }
 
@@ -82,7 +80,7 @@ export default function AddNewFieldPage() {
       toast({ title: 'Field Added', description: `${name} has been successfully registered.` });
       router.push('/fields');
     } catch (error) {
-      console.error(error);
+      console.error('Error adding field:', error);
       setIsSubmitting(false);
     }
   };
@@ -95,7 +93,6 @@ export default function AddNewFieldPage() {
     );
   }
 
-  // Final fallback if redirect hasn't happened yet
   if (!user) return null;
 
   return (

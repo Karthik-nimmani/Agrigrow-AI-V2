@@ -1,4 +1,3 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -16,20 +15,20 @@ let cachedSdks: {
 export function initializeFirebase() {
   if (cachedSdks) return cachedSdks;
 
+  let firebaseApp: FirebaseApp;
+  
   if (!getApps().length) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-    cachedSdks = getSdks(firebaseApp);
+    // Always use the config object for explicit initialization in the prototyping environment
+    firebaseApp = initializeApp(firebaseConfig);
   } else {
-    cachedSdks = getSdks(getApp());
+    firebaseApp = getApp();
   }
+
+  cachedSdks = {
+    firebaseApp,
+    auth: getAuth(firebaseApp),
+    firestore: getFirestore(firebaseApp)
+  };
 
   return cachedSdks;
 }

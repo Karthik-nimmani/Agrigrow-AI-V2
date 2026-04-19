@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -70,6 +69,7 @@ export default function SettingsPage() {
         ...prev,
         displayName: user.displayName || '',
         email: user.email || '',
+        phone: user.phoneNumber || ''
       }));
     }
   }, [userData, user]);
@@ -108,7 +108,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isUserLoading || isDataLoading) {
+  if (isUserLoading || (user && isDataLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -116,8 +116,13 @@ export default function SettingsPage() {
     );
   }
 
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-24">
+    <div className="max-w-4xl mx-auto space-y-8 pb-24 p-4 md:p-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-headline">Account Settings</h1>
