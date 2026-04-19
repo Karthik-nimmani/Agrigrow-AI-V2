@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -64,6 +65,12 @@ export default function SettingsPage() {
         notifications: userData.notifications ?? true,
         weatherAlerts: userData.weatherAlerts ?? true
       });
+    } else if (user) {
+      setFormData(prev => ({
+        ...prev,
+        displayName: user.displayName || '',
+        email: user.email || '',
+      }));
     }
   }, [userData, user]);
 
@@ -91,6 +98,11 @@ export default function SettingsPage() {
       });
     } catch (err) {
       console.error(err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update settings.'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -111,7 +123,11 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold font-headline">Account Settings</h1>
           <p className="text-muted-foreground">Manage your profile and application preferences.</p>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="rounded-xl px-6 gap-2">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving} 
+          className="rounded-xl px-6 gap-2 shadow-lg hover:scale-105 transition-transform"
+        >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           Save Changes
         </Button>

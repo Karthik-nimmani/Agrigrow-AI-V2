@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Sprout, Phone, Loader2, LogIn } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn, setDocumentNonBlocking } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'method' | 'phone' | 'otp'>('method');
@@ -17,6 +19,7 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
 
   // Redirect if already logged in and ensure user profile exists
   useEffect(() => {
@@ -32,12 +35,17 @@ export default function LoginPage() {
         updatedAt: new Date().toISOString()
       };
 
-      // If we have a phone number from the login flow, save it
-      if (phoneNumber) {
+      // Check if we have a phone number stored in session (from the current login flow)
+      const sessionPhone = sessionStorage.getItem('pending_phone');
+      if (sessionPhone) {
+        profileData.phone = sessionPhone;
+        sessionStorage.removeItem('pending_phone');
+      } else if (phoneNumber) {
         profileData.phone = phoneNumber;
       }
 
       setDocumentNonBlocking(userRef, profileData, { merge: true });
+      
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router, phoneNumber]);
@@ -46,8 +54,8 @@ export default function LoginPage() {
     e.preventDefault();
     if (!phoneNumber) return;
     setIsLoading(true);
-    // In a production app, we would use signInWithPhoneNumber(auth, phoneNumber, appVerifier)
-    // For this implementation, we proceed to OTP simulation or direct sign-in
+    // Persist phone number to session so it survives redirects/auth state changes
+    sessionStorage.setItem('pending_phone', phoneNumber);
     setStep('otp');
     setIsLoading(false);
   };
@@ -55,7 +63,6 @@ export default function LoginPage() {
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Complete the sign in
     initiateAnonymousSignIn(auth);
   };
 
