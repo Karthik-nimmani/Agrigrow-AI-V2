@@ -19,7 +19,8 @@ import {
   ChevronRight,
   MapPin,
   Edit3,
-  Trash2
+  Trash2,
+  Maximize
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -370,15 +371,16 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
         <Link href="/assistant">
-          <Button size="icon" className="w-12 h-12 rounded-full bg-white shadow-lg text-primary hover:bg-muted border border-muted hover:scale-110 transition-transform">
-            <Bot className="w-6 h-6" />
+          <Button size="icon" className="w-14 h-14 rounded-full bg-white shadow-xl text-primary border border-primary/10 hover:bg-primary/5 hover:scale-110 transition-transform">
+            <Bot className="w-7 h-7" />
           </Button>
         </Link>
-        <Link href="/fields/new">
-          <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
-            <Plus className="w-8 h-8" />
+        <Link href="/vision">
+          <Button size="icon" className="w-14 h-14 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
+            <Maximize className="w-7 h-7" />
           </Button>
         </Link>
       </div>

@@ -101,15 +101,16 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err: any) {
+      // Improved error detection
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
-      const isNotFoundError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
+      const isConfigError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
       
-      let errorMessage = `AI Error: ${err.message || "I encountered an unexpected problem. Please try again."}`;
+      let errorMessage = `AI System Error: ${err.message || "Unknown error encountered."}`;
       
       if (isQuotaError) {
-        errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
-      } else if (isNotFoundError) {
-        errorMessage = "The AI model configuration is temporarily unavailable. Standardizing to stable Gemini 1.5 Flash. Please try again in a few seconds.";
+        errorMessage = "Daily request quota reached (30/day). Please try again tomorrow.";
+      } else if (isConfigError) {
+        errorMessage = "AI Model Identification Error: The requested Gemini model configuration is temporarily unavailable. Standardizing to stable flash-1.5.";
       }
 
       const errorMsgId = crypto.randomUUID();
