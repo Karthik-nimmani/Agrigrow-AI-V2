@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -26,7 +25,7 @@ import { collection } from 'firebase/firestore';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   
   const [weatherData, setWeatherData] = useState({

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -35,7 +34,7 @@ import { collection, doc } from 'firebase/firestore';
 
 export default function FieldsPage() {
   const router = useRouter();
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [search, setSearch] = useState('');

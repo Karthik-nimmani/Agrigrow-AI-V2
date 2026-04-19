@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, use, useEffect } from 'react';
@@ -23,7 +22,7 @@ import { doc } from 'firebase/firestore';
 
 export default function FieldDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
   
