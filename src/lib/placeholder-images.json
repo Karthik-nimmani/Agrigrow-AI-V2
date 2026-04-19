@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-farm",
+      "description": "Golden fields at sunset",
+      "imageUrl": "https://picsum.photos/seed/agri1/1200/800",
+      "imageHint": "golden fields"
+    },
+    {
+      "id": "farmer-working",
+      "description": "A farmer examining crops",
+      "imageUrl": "https://picsum.photos/seed/agri2/600/400",
+      "imageHint": "farmer crops"
+    },
+    {
+      "id": "soil-report",
+      "description": "Close up of rich soil",
+      "imageUrl": "https://picsum.photos/seed/agri3/600/400",
+      "imageHint": "soil earth"
+    }
+  ]
 }
