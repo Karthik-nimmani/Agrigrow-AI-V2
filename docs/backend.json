@@ -1,393 +1,340 @@
 {
   "entities": {
-    "Farm": {
+    "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Farm",
+      "title": "User",
       "type": "object",
-      "description": "Represents a physical farm owned by a user, containing multiple fields.",
+      "description": "Represents a user of the AgriGrow AI application. This entity stores core profile information, with authentication handled by an external system.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Farm entity."
+          "description": "Unique identifier for the User entity."
         },
-        "name": {
+        "displayName": {
           "type": "string",
-          "description": "The name of the farm."
+          "description": "The user's preferred name for display purposes."
         },
-        "location": {
+        "email": {
           "type": "string",
-          "description": "Geographical location details of the farm, which can be coordinates or a descriptive address."
+          "description": "The user's email address.",
+          "format": "email"
         },
-        "ownerId": {
+        "phone": {
           "type": "string",
-          "description": "Reference to the unique identifier of the user who owns this farm, from an external authentication system. (Relationship: User 1:N Farm)"
+          "description": "The user's phone number, primarily used for OTP authentication."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "description": "The user's preferred language for application interface and communications (e.g., 'en', 'hi')."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the farm record was created.",
+          "description": "Timestamp when the user account was created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the farm record was last updated.",
+          "description": "Timestamp when the user account information was last updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "name",
-        "location",
-        "ownerId",
-        "createdAt",
-        "updatedAt"
+        "displayName",
+        "email",
+        "preferredLanguage",
+        "createdAt"
       ]
     },
-    "Field": {
+    "FarmField": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Field",
+      "title": "FarmField",
       "type": "object",
-      "description": "Represents an individual agricultural field within a farm, used for tracking crops and soil data.",
+      "description": "Represents a specific farm field managed by a user, including its physical characteristics and current crop information.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Field entity."
+          "description": "Unique identifier for the FarmField entity."
         },
-        "farmId": {
+        "userId": {
           "type": "string",
-          "description": "Reference to the Farm this field belongs to. (Relationship: Farm 1:N Field)"
+          "description": "Reference to the User who owns this farm field. (Relationship: User 1:N FarmField)"
         },
         "name": {
           "type": "string",
-          "description": "The descriptive name of the field (e.g., 'North Field 1')."
+          "description": "A user-defined name for the farm field (e.g., 'North Acre Field', 'Plot 3')."
         },
-        "areaValue": {
+        "locationDescription": {
+          "type": "string",
+          "description": "A descriptive text for the field's location (e.g., 'Near the river', 'Behind the house')."
+        },
+        "latitude": {
           "type": "number",
-          "description": "The numerical value of the field's area."
+          "description": "The geographical latitude of the farm field."
         },
-        "areaUnit": {
-          "type": "string",
-          "description": "The unit of measurement for the field's area (e.g., 'acres', 'hectares')."
+        "longitude": {
+          "type": "number",
+          "description": "The geographical longitude of the farm field."
         },
-        "description": {
+        "area": {
+          "type": "number",
+          "description": "The total area of the farm field."
+        },
+        "unitOfArea": {
           "type": "string",
-          "description": "An optional description or notes about the field."
+          "description": "The unit of measurement for the field's area (e.g., 'acres', 'hectares', 'sq_meters')."
+        },
+        "currentCropId": {
+          "type": "string",
+          "description": "Reference to the Crop currently being cultivated in this field. (Relationship: Crop 1:N FarmField)"
+        },
+        "soilType": {
+          "type": "string",
+          "description": "The primary soil type of the field (e.g., 'Loamy', 'Clay', 'Sandy')."
         },
         "lastSoilReportId": {
           "type": "string",
-          "description": "Reference to the unique identifier of the most recent SoilReport for this field, for quick lookup. (Relationship: Field 1:N SoilReport)"
+          "description": "Reference to the most recent SoilReport for this field, for quick access. (Relationship: SoilReport 1:N FarmField)"
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the field record was created.",
+          "description": "Timestamp when the farm field record was created.",
           "format": "date-time"
         },
         "updatedAt": {
           "type": "string",
-          "description": "Timestamp when the field record was last updated.",
+          "description": "Timestamp when the farm field record was last updated.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "farmId",
+        "userId",
         "name",
-        "areaValue",
-        "areaUnit",
-        "createdAt",
-        "updatedAt"
+        "area",
+        "unitOfArea",
+        "currentCropId",
+        "createdAt"
       ]
     },
-    "CropCycle": {
+    "Crop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CropCycle",
+      "title": "Crop",
       "type": "object",
-      "description": "Tracks the lifecycle of a specific crop planted in a field, including planting, harvesting, and yield.",
+      "description": "Defines characteristics of a specific crop type, used for cultivation planning and recommendations.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the CropCycle entity."
+          "description": "Unique identifier for the Crop entity."
         },
-        "fieldId": {
+        "name": {
           "type": "string",
-          "description": "Reference to the Field where this crop cycle took place. (Relationship: Field 1:N CropCycle)"
+          "description": "The common name of the crop (e.g., 'Wheat', 'Maize', 'Rice')."
         },
-        "cropType": {
+        "description": {
           "type": "string",
-          "description": "The type of crop grown during this cycle (e.g., 'Wheat', 'Corn', 'Soybeans')."
+          "description": "A brief description of the crop."
         },
-        "plantingDate": {
-          "type": "string",
-          "description": "The date when the crop was planted.",
-          "format": "date"
-        },
-        "harvestDate": {
-          "type": "string",
-          "description": "The date when the crop was harvested. Can be null if the cycle is ongoing.",
-          "format": "date"
-        },
-        "actualYieldValue": {
+        "optimalSoilPHMin": {
           "type": "number",
-          "description": "The numerical value of the actual yield obtained from this crop cycle. Can be null if not yet harvested."
+          "description": "The minimum optimal soil pH level for this crop."
         },
-        "actualYieldUnit": {
-          "type": "string",
-          "description": "The unit of measurement for the actual yield (e.g., 'bushels/acre', 'kg/hectare'). Can be null if not yet harvested."
+        "optimalSoilPHMax": {
+          "type": "number",
+          "description": "The maximum optimal soil pH level for this crop."
         },
-        "notes": {
+        "plantingSeasonStart": {
           "type": "string",
-          "description": "Any additional notes or observations about this crop cycle."
+          "description": "The typical start month/period for planting this crop (e.g., 'March', 'Spring')."
         },
-        "createdAt": {
+        "plantingSeasonEnd": {
           "type": "string",
-          "description": "Timestamp when the crop cycle record was created.",
-          "format": "date-time"
+          "description": "The typical end month/period for planting this crop."
         },
-        "updatedAt": {
+        "harvestSeasonStart": {
           "type": "string",
-          "description": "Timestamp when the crop cycle record was last updated.",
-          "format": "date-time"
+          "description": "The typical start month/period for harvesting this crop."
+        },
+        "harvestSeasonEnd": {
+          "type": "string",
+          "description": "The typical end month/period for harvesting this crop."
         }
       },
       "required": [
         "id",
-        "fieldId",
-        "cropType",
-        "plantingDate",
-        "createdAt",
-        "updatedAt"
+        "name",
+        "optimalSoilPHMin",
+        "optimalSoilPHMax"
+      ]
+    },
+    "YieldRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "YieldRecord",
+      "type": "object",
+      "description": "Records historical actual yield data for a specific crop harvested from a farm field.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the YieldRecord entity."
+        },
+        "farmFieldId": {
+          "type": "string",
+          "description": "Reference to the FarmField where the yield was harvested. (Relationship: FarmField 1:N YieldRecord)"
+        },
+        "cropId": {
+          "type": "string",
+          "description": "Reference to the Crop that was harvested. (Relationship: Crop 1:N YieldRecord)"
+        },
+        "harvestDate": {
+          "type": "string",
+          "description": "The date when the crop was harvested.",
+          "format": "date"
+        },
+        "actualYield": {
+          "type": "number",
+          "description": "The actual quantity of the crop harvested."
+        },
+        "unitOfYield": {
+          "type": "string",
+          "description": "The unit of measurement for the actual yield (e.g., 'kg', 'tonnes', 'bushels')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any additional notes about the harvest or yield."
+        }
+      },
+      "required": [
+        "id",
+        "farmFieldId",
+        "cropId",
+        "harvestDate",
+        "actualYield",
+        "unitOfYield"
       ]
     },
     "SoilReport": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "SoilReport",
       "type": "object",
-      "description": "Stores details extracted from a soil analysis report for a specific field.",
+      "description": "Stores detailed soil analysis data for a farm field, often extracted from lab reports via AI Vision.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the SoilReport entity."
         },
-        "fieldId": {
+        "farmFieldId": {
           "type": "string",
-          "description": "Reference to the Field this soil report belongs to. (Relationship: Field 1:N SoilReport)"
+          "description": "Reference to the FarmField to which this soil report pertains. (Relationship: FarmField 1:N SoilReport)"
         },
         "reportDate": {
           "type": "string",
-          "description": "The date when the soil sample was taken or the report was generated.",
+          "description": "The date the soil report was generated or performed.",
           "format": "date"
         },
         "ph": {
           "type": "number",
-          "description": "The pH level of the soil, indicating its acidity or alkalinity."
+          "description": "The pH level of the soil."
         },
-        "nitrogenValue": {
+        "nitrogenLevel": {
           "type": "number",
-          "description": "The measured nitrogen content in the soil."
+          "description": "The nitrogen (N) level in the soil (e.g., in ppm)."
         },
-        "phosphorusValue": {
+        "phosphorusLevel": {
           "type": "number",
-          "description": "The measured phosphorus content in the soil."
+          "description": "The phosphorus (P) level in the soil (e.g., in ppm)."
         },
-        "potassiumValue": {
+        "potassiumLevel": {
           "type": "number",
-          "description": "The measured potassium content in the soil."
+          "description": "The potassium (K) level in the soil (e.g., in ppm)."
         },
-        "moisturePercentage": {
+        "moistureLevel": {
           "type": "number",
-          "description": "The percentage of moisture content in the soil."
+          "description": "The moisture content percentage in the soil."
         },
         "organicMatterPercentage": {
           "type": "number",
           "description": "The percentage of organic matter present in the soil."
         },
-        "scanImageUrl": {
+        "scanPhotoUrl": {
           "type": "string",
-          "description": "URL to the scanned image of the physical soil report, if available.",
+          "description": "URL to the scanned image of the physical soil report, if applicable.",
           "format": "uri"
         },
-        "notes": {
+        "source": {
           "type": "string",
-          "description": "Any additional notes or observations related to the soil report."
+          "description": "Indicates how the soil report data was obtained (e.g., 'AI Vision Scan', 'Manual Entry')."
         },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the soil report record was created.",
           "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the soil report record was last updated.",
-          "format": "date-time"
         }
       },
       "required": [
         "id",
-        "fieldId",
+        "farmFieldId",
         "reportDate",
         "ph",
-        "nitrogenValue",
-        "phosphorusValue",
-        "potassiumValue",
-        "moisturePercentage",
-        "organicMatterPercentage",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "WeatherObservation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "WeatherObservation",
-      "type": "object",
-      "description": "Records real-time meteorological data for a specific field location.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the WeatherObservation entity."
-        },
-        "fieldId": {
-          "type": "string",
-          "description": "Reference to the Field for which this weather observation was recorded. (Relationship: Field 1:N WeatherObservation)"
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The exact date and time the weather observation was made.",
-          "format": "date-time"
-        },
-        "temperatureCelsius": {
-          "type": "number",
-          "description": "The observed temperature in degrees Celsius."
-        },
-        "humidityPercentage": {
-          "type": "number",
-          "description": "The observed relative humidity as a percentage."
-        },
-        "precipitationMillimeters": {
-          "type": "number",
-          "description": "The amount of precipitation (e.g., rain, snow) in millimeters during the observation period."
-        },
-        "windSpeedMetersPerSecond": {
-          "type": "number",
-          "description": "The observed wind speed in meters per second."
-        },
-        "cloudCoverPercentage": {
-          "type": "number",
-          "description": "The percentage of cloud cover observed."
-        },
-        "conditionsDescription": {
-          "type": "string",
-          "description": "A brief textual description of the weather conditions (e.g., 'clear sky', 'light rain')."
-        },
-        "source": {
-          "type": "string",
-          "description": "The source of the weather data (e.g., 'OpenWeather')."
-        }
-      },
-      "required": [
-        "id",
-        "fieldId",
-        "timestamp",
-        "temperatureCelsius",
-        "humidityPercentage",
-        "precipitationMillimeters",
-        "windSpeedMetersPerSecond",
-        "cloudCoverPercentage",
-        "conditionsDescription",
-        "source"
-      ]
-    },
-    "WeatherAlert": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "WeatherAlert",
-      "type": "object",
-      "description": "Notifies farmers about critical meteorological conditions affecting their fields.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the WeatherAlert entity."
-        },
-        "fieldId": {
-          "type": "string",
-          "description": "Reference to the Field to which this weather alert applies. (Relationship: Field 1:N WeatherAlert)"
-        },
-        "type": {
-          "type": "string",
-          "description": "The category of the alert (e.g., 'FrostWarning', 'HighWindAlert', 'IrrigationRecommendation')."
-        },
-        "severity": {
-          "type": "string",
-          "description": "The impact level of the alert (e.g., 'Low', 'Medium', 'High')."
-        },
-        "message": {
-          "type": "string",
-          "description": "A detailed message describing the weather alert and its implications."
-        },
-        "issuedAt": {
-          "type": "string",
-          "description": "The date and time when the alert was issued.",
-          "format": "date-time"
-        },
-        "expiresAt": {
-          "type": "string",
-          "description": "The date and time when the alert is expected to expire. Can be null if ongoing or indefinitely applicable.",
-          "format": "date-time"
-        },
-        "isDismissed": {
-          "type": "boolean",
-          "description": "Indicates whether the user has dismissed this alert."
-        },
-        "sourceObservationId": {
-          "type": "string",
-          "description": "Reference to the WeatherObservation that triggered this alert. (Relationship: WeatherObservation 1:N WeatherAlert)"
-        }
-      },
-      "required": [
-        "id",
-        "fieldId",
-        "type",
-        "severity",
-        "message",
-        "issuedAt",
-        "isDismissed"
+        "nitrogenLevel",
+        "phosphorusLevel",
+        "potassiumLevel",
+        "createdAt"
       ]
     },
     "YieldForecast": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "YieldForecast",
       "type": "object",
-      "description": "Stores AI-generated predictions for crop yield for a specific crop cycle.",
+      "description": "Stores predictive yield estimates generated by AI models for a specific crop and field, including explainable insights.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the YieldForecast entity."
         },
-        "cropCycleId": {
+        "farmFieldId": {
           "type": "string",
-          "description": "Reference to the CropCycle for which this forecast is made. (Relationship: CropCycle 1:N YieldForecast)"
+          "description": "Reference to the FarmField for which the yield is forecasted. (Relationship: FarmField 1:N YieldForecast)"
+        },
+        "cropId": {
+          "type": "string",
+          "description": "Reference to the Crop for which the yield is forecasted. (Relationship: Crop 1:N YieldForecast)"
         },
         "forecastDate": {
           "type": "string",
-          "description": "The date and time when the yield forecast was generated.",
+          "description": "The timestamp when this yield forecast was generated.",
           "format": "date-time"
         },
-        "predictedYieldValue": {
-          "type": "number",
-          "description": "The numerical value of the predicted yield."
-        },
-        "predictedYieldUnit": {
+        "predictedHarvestDate": {
           "type": "string",
-          "description": "The unit of measurement for the predicted yield (e.g., 'bushels/acre', 'kg/hectare')."
+          "description": "The estimated date of harvest for which this forecast is applicable.",
+          "format": "date"
+        },
+        "forecastedYield": {
+          "type": "number",
+          "description": "The predicted quantity of crop yield."
+        },
+        "unitOfYield": {
+          "type": "string",
+          "description": "The unit of measurement for the forecasted yield (e.g., 'kg', 'tonnes')."
         },
         "confidenceScore": {
           "type": "number",
-          "description": "A score (0 to 1) indicating the confidence level of the prediction."
+          "description": "A score (0-1) indicating the confidence level of the AI model's prediction."
         },
-        "explanation": {
+        "modelUsed": {
           "type": "string",
-          "description": "An explanation from the Explainable AI Insights describing the factors influencing the forecast."
+          "description": "The name or version of the AI model used for generating the forecast (e.g., 'Gemini 1.5 Pro')."
         },
-        "aiModelVersion": {
+        "insightText": {
           "type": "string",
-          "description": "The version of the AI model used to generate this forecast."
+          "description": "Explainable AI insights providing transparent logic for the prediction (e.g., 'Lower yield predicted due to reduced rainfall')."
+        },
+        "factorsConsidered": {
+          "type": "array",
+          "description": "A list of key factors the AI considered in generating the forecast (e.g., 'rainfall', 'fertilizer', 'soil pH').",
+          "items": {
+            "type": "string"
+          }
         },
         "createdAt": {
           "type": "string",
@@ -397,13 +344,14 @@
       },
       "required": [
         "id",
-        "cropCycleId",
+        "farmFieldId",
+        "cropId",
         "forecastDate",
-        "predictedYieldValue",
-        "predictedYieldUnit",
-        "confidenceScore",
-        "explanation",
-        "aiModelVersion",
+        "predictedHarvestDate",
+        "forecastedYield",
+        "unitOfYield",
+        "modelUsed",
+        "insightText",
         "createdAt"
       ]
     },
@@ -411,126 +359,210 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Recommendation",
       "type": "object",
-      "description": "Provides actionable advice generated by AI for farm management.",
+      "description": "Stores actionable advice generated by AI for improving farm management based on current and forecasted data.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Recommendation entity."
         },
-        "fieldId": {
+        "farmFieldId": {
           "type": "string",
-          "description": "Reference to the Field for which this recommendation is provided. (Relationship: Field 1:N Recommendation)"
+          "description": "Reference to the FarmField for which the recommendation is given. (Relationship: FarmField 1:N Recommendation)"
         },
-        "cropCycleId": {
+        "cropId": {
           "type": "string",
-          "description": "Optional reference to a specific CropCycle if the recommendation is crop-specific. (Relationship: CropCycle 1:N Recommendation)"
+          "description": "Reference to the Crop relevant to this recommendation. Optional if the recommendation is general. (Relationship: Crop 1:N Recommendation)"
         },
-        "type": {
+        "recommendationText": {
           "type": "string",
-          "description": "The category of the recommendation (e.g., 'Fertilizer', 'PestControl', 'Irrigation', 'Harvest')."
+          "description": "The full text of the actionable recommendation (e.g., 'Apply 50kg lime/acre to adjust soil pH')."
         },
-        "title": {
+        "recommendationType": {
           "type": "string",
-          "description": "A concise title or summary of the recommendation."
+          "description": "The category of the recommendation (e.g., 'fertilizer', 'irrigation', 'pest control', 'planting')."
         },
-        "description": {
+        "generatedDate": {
           "type": "string",
-          "description": "The detailed, actionable advice provided by the AI (e.g., 'Apply 50kg lime/acre')."
-        },
-        "generatedBy": {
-          "type": "string",
-          "description": "The AI component that generated this recommendation (e.g., 'Generative AI', 'Agri-Bot')."
-        },
-        "generatedAt": {
-          "type": "string",
-          "description": "The date and time when the recommendation was generated.",
+          "description": "The timestamp when this recommendation was generated.",
           "format": "date-time"
         },
-        "isActioned": {
-          "type": "boolean",
-          "description": "Indicates whether the farmer has taken action on this recommendation."
-        },
-        "actionedAt": {
+        "status": {
           "type": "string",
-          "description": "The date and time when the recommendation was actioned. Can be null if not yet actioned.",
-          "format": "date-time"
+          "description": "The current status of the recommendation (e.g., 'pending', 'applied', 'dismissed', 'archived')."
         },
-        "sourceYieldForecastId": {
+        "sourceForecastId": {
           "type": "string",
-          "description": "Optional reference to the YieldForecast that this recommendation is based on. (Relationship: YieldForecast 1:N Recommendation)"
+          "description": "Reference to the YieldForecast that prompted this recommendation, if applicable. (Relationship: YieldForecast 1:N Recommendation)"
         }
       },
       "required": [
         "id",
-        "fieldId",
-        "type",
-        "title",
-        "description",
-        "generatedBy",
-        "generatedAt",
-        "isActioned"
+        "farmFieldId",
+        "recommendationText",
+        "recommendationType",
+        "generatedDate",
+        "status"
       ]
     },
-    "DiseaseDetection": {
+    "WeatherData": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DiseaseDetection",
+      "title": "WeatherData",
       "type": "object",
-      "description": "Records the results of AI vision-based disease and pest detection from uploaded images.",
+      "description": "Records real-time meteorological conditions for a specific farm field, used for dynamic alerts and insights.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the DiseaseDetection entity."
+          "description": "Unique identifier for the WeatherData entity."
         },
-        "fieldId": {
+        "farmFieldId": {
           "type": "string",
-          "description": "Reference to the Field where the disease/pest was detected. (Relationship: Field 1:N DiseaseDetection)"
+          "description": "Reference to the FarmField for which the weather data is recorded. (Relationship: FarmField 1:N WeatherData)"
         },
-        "cropCycleId": {
+        "timestamp": {
           "type": "string",
-          "description": "Optional reference to the CropCycle during which the detection occurred. (Relationship: CropCycle 1:N DiseaseDetection)"
+          "description": "The timestamp when the weather data was recorded.",
+          "format": "date-time"
+        },
+        "temperatureCelsius": {
+          "type": "number",
+          "description": "The ambient temperature in Celsius."
+        },
+        "humidityPercentage": {
+          "type": "number",
+          "description": "The relative humidity as a percentage."
+        },
+        "precipitationMillimeters": {
+          "type": "number",
+          "description": "The amount of precipitation in millimeters over a period (e.g., last hour or day)."
+        },
+        "windSpeedMps": {
+          "type": "number",
+          "description": "The wind speed in meters per second."
+        },
+        "weatherConditions": {
+          "type": "string",
+          "description": "A brief description of the weather conditions (e.g., 'sunny', 'cloudy', 'light rain')."
+        },
+        "alertType": {
+          "type": "string",
+          "description": "Type of weather alert, if any (e.g., 'frost warning', 'irrigation needed', 'heat advisory')."
+        },
+        "alertDescription": {
+          "type": "string",
+          "description": "Detailed description of the weather alert."
+        }
+      },
+      "required": [
+        "id",
+        "farmFieldId",
+        "timestamp",
+        "temperatureCelsius",
+        "humidityPercentage"
+      ]
+    },
+    "DiseaseDetectionReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DiseaseDetectionReport",
+      "type": "object",
+      "description": "Stores reports generated by the AI Vision Suite for detecting diseases or pests from crop photos, including treatment plans.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DiseaseDetectionReport entity."
+        },
+        "farmFieldId": {
+          "type": "string",
+          "description": "Reference to the FarmField where the photo was taken and disease detected. (Relationship: FarmField 1:N DiseaseDetectionReport)"
+        },
+        "cropId": {
+          "type": "string",
+          "description": "Reference to the Crop type that is affected by the detected disease/pest. (Relationship: Crop 1:N DiseaseDetectionReport)"
         },
         "detectionDate": {
           "type": "string",
-          "description": "The date and time when the disease detection was performed.",
+          "description": "The timestamp when the disease detection was performed.",
           "format": "date-time"
         },
-        "imageUrl": {
+        "photoUrl": {
           "type": "string",
-          "description": "URL to the image uploaded by the user for detection.",
+          "description": "URL to the image uploaded for disease detection.",
           "format": "uri"
         },
-        "identifiedItems": {
+        "detectedDiseases": {
           "type": "array",
-          "description": "An array of identified pests or diseases from the image, each with its details.",
+          "description": "A list of names of diseases or pests identified in the photo.",
           "items": {
             "type": "string"
           }
+        },
+        "diseaseConfidenceScore": {
+          "type": "number",
+          "description": "A score (0-1) indicating the AI's confidence in the disease detection."
         },
         "treatmentPlan": {
-          "type": "array",
-          "description": "A multi-part treatment plan provided by the AI for the identified issues.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "notes": {
           "type": "string",
-          "description": "Any additional notes or observations related to the detection or treatment."
+          "description": "A detailed 3-part treatment plan recommended for the detected diseases/pests."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the report (e.g., 'new', 'in progress', 'resolved', 'archived')."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the disease detection record was created.",
+          "description": "Timestamp when the disease detection report record was created.",
           "format": "date-time"
         }
       },
       "required": [
         "id",
-        "fieldId",
+        "farmFieldId",
+        "cropId",
         "detectionDate",
-        "imageUrl",
-        "identifiedItems",
+        "photoUrl",
+        "detectedDiseases",
         "treatmentPlan",
+        "status",
         "createdAt"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Stores messages exchanged with the AI Farm Assistant (Agri-Bot), enabling chat history and context.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatMessage entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who initiated or received the message. (Relationship: User 1:N ChatMessage)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the message was sent or received.",
+          "format": "date-time"
+        },
+        "senderType": {
+          "type": "string",
+          "description": "Indicates whether the sender was the 'user' or the 'bot'."
+        },
+        "messageText": {
+          "type": "string",
+          "description": "The content of the chat message."
+        },
+        "language": {
+          "type": "string",
+          "description": "The language in which the message was sent or responded (e.g., 'en', 'hi')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "timestamp",
+        "senderType",
+        "messageText"
       ]
     }
   },
@@ -543,96 +575,216 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/farms/{farmId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Farm",
+          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/Farm"
+            "$ref": "#/backend/entities/User"
           },
-          "description": "Represents a farm owned by a user. Each document's 'ownerId' field explicitly identifies the user, aligning with '{userId}' in the path for direct authorization."
+          "description": "Stores core user profile data. Access is strictly limited to the authenticated user matching the {userId} in the path."
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}",
+        "path": "/users/{userId}/farmFields/{farmFieldId}",
         "definition": {
-          "entityName": "Field",
+          "entityName": "FarmField",
           "schema": {
-            "$ref": "#/backend/entities/Field"
+            "$ref": "#/backend/entities/FarmField"
           },
-          "description": "Represents an agricultural field within a farm. Documents include denormalized 'ownerId' and 'farmId' fields to ensure authorization independence without requiring parent document lookups."
+          "description": "Stores details for each farm field owned by a specific user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier for the specific farm field."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/cropCycles/{cropCycleId}",
+        "path": "/crops/{cropId}",
         "definition": {
-          "entityName": "CropCycle",
+          "entityName": "Crop",
           "schema": {
-            "$ref": "#/backend/entities/CropCycle"
+            "$ref": "#/backend/entities/Crop"
           },
-          "description": "Tracks the lifecycle of a crop in a field. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for robust authorization independence."
+          "description": "Global collection storing definitions and characteristics of various crop types. This data is generally publicly readable for reference by all users.",
+          "params": [
+            {
+              "name": "cropId",
+              "description": "The unique identifier for a specific crop type."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/soilReports/{soilReportId}",
+        "path": "/users/{userId}/farmFields/{farmFieldId}/yieldRecords/{yieldRecordId}",
+        "definition": {
+          "entityName": "YieldRecord",
+          "schema": {
+            "$ref": "#/backend/entities/YieldRecord"
+          },
+          "description": "Stores historical yield data for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "yieldRecordId",
+              "description": "The unique identifier for the yield record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/farmFields/{farmFieldId}/soilReports/{soilReportId}",
         "definition": {
           "entityName": "SoilReport",
           "schema": {
             "$ref": "#/backend/entities/SoilReport"
           },
-          "description": "Stores soil analysis reports for a field. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for authorization independence."
+          "description": "Stores detailed soil analysis reports for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "soilReportId",
+              "description": "The unique identifier for the soil report."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/weatherObservations/{observationId}",
-        "definition": {
-          "entityName": "WeatherObservation",
-          "schema": {
-            "$ref": "#/backend/entities/WeatherObservation"
-          },
-          "description": "Records real-time weather data for a field. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for authorization independence."
-        }
-      },
-      {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/weatherAlerts/{alertId}",
-        "definition": {
-          "entityName": "WeatherAlert",
-          "schema": {
-            "$ref": "#/backend/entities/WeatherAlert"
-          },
-          "description": "Notifies farmers about critical weather conditions. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for authorization independence."
-        }
-      },
-      {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/cropCycles/{cropCycleId}/yieldForecasts/{forecastId}",
+        "path": "/users/{userId}/farmFields/{farmFieldId}/yieldForecasts/{forecastId}",
         "definition": {
           "entityName": "YieldForecast",
           "schema": {
             "$ref": "#/backend/entities/YieldForecast"
           },
-          "description": "Stores AI-generated yield predictions for a specific crop cycle. Documents include denormalized 'ownerId', 'farmId', 'fieldId', and 'cropCycleId' for authorization independence."
+          "description": "Stores AI-generated yield forecasts for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "forecastId",
+              "description": "The unique identifier for the yield forecast."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/recommendations/{recommendationId}",
+        "path": "/users/{userId}/farmFields/{farmFieldId}/recommendations/{recommendationId}",
         "definition": {
           "entityName": "Recommendation",
           "schema": {
             "$ref": "#/backend/entities/Recommendation"
           },
-          "description": "Provides AI-generated actionable advice for farm management. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for authorization independence."
+          "description": "Stores AI-generated actionable recommendations for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "recommendationId",
+              "description": "The unique identifier for the recommendation."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}/farms/{farmId}/fields/{fieldId}/diseaseDetections/{detectionId}",
+        "path": "/users/{userId}/farmFields/{farmFieldId}/weatherData/{weatherDataId}",
         "definition": {
-          "entityName": "DiseaseDetection",
+          "entityName": "WeatherData",
           "schema": {
-            "$ref": "#/backend/entities/DiseaseDetection"
+            "$ref": "#/backend/entities/WeatherData"
           },
-          "description": "Records AI vision-based disease and pest detection results. Documents include denormalized 'ownerId', 'farmId', and 'fieldId' for authorization independence."
+          "description": "Stores real-time weather data for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "weatherDataId",
+              "description": "The unique identifier for the weather data record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/farmFields/{farmFieldId}/diseaseDetectionReports/{reportId}",
+        "definition": {
+          "entityName": "DiseaseDetectionReport",
+          "schema": {
+            "$ref": "#/backend/entities/DiseaseDetectionReport"
+          },
+          "description": "Stores AI Vision Suite reports for disease detection for a specific farm field. Includes denormalized 'userId' and 'farmFieldId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the parent farm field."
+            },
+            {
+              "name": "farmFieldId",
+              "description": "The unique identifier of the parent farm field."
+            },
+            {
+              "name": "reportId",
+              "description": "The unique identifier for the disease detection report."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chatMessages/{messageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores chat messages exchanged with the AI Farm Assistant for a specific user. Includes denormalized 'userId' for authorization independence and direct ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who sent or received the message."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the chat message."
+            }
+          ]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure for AgriGrow AI is based on a deeply hierarchical, user-centric model, ensuring strict adherence to Authorization Independence and Query-able Access Patterns (QAPs). All data is nested under a `/users/{userId}` root, reflecting the private, user-owned nature of farm management data.\n\n**Authorization Independence:** This is achieved by systematically denormalizing authorization-critical fields into every subcollection document. For instance, a `Field` document, while conceptually belonging to a `Farm`, will explicitly contain its `ownerId` (the user's ID) and `farmId`. Similarly, a `CropCycle` document will include `ownerId`, `farmId`, and `fieldId`. This strategy eliminates the need for `get()` calls in Firestore Security Rules to check parent ownership or permissions, making rules atomic, faster, and easier to debug. Operations like creating a new field can be batched with the farm creation or updated independently, without breaking security checks.\n\n**Query-able Access Patterns (QAPs):** By organizing data under `/users/{userId}/...`, `list` queries are inherently secure and efficient. A user can only perform a `list` operation on their own data (e.g., `/users/myUserId/farms`). The security rules can easily enforce `request.auth.uid == userId` for all read/write operations at any level of the hierarchy, preventing unauthorized users from even attempting to query other users' data. Since the path itself filters by user, and denormalized fields confirm ownership, the rules are not used as filters but as strict access enforcers, which is a core QAP principle.\n\n**Structural Segregation:** Each collection within the hierarchy maintains a homogeneous security posture: all documents within `/users/{userId}/farms/{farmId}/fields` are private and belong to the specified user and farm. There is no mixing of publicly accessible data with private data in the same collection, simplifying security rules immensely.\n\n**Access Modeling:** The design strictly uses Path-Based ownership and Hierarchical Paths for all user-owned data. This is evident in the nested structure: `users > farms > fields > cropCycles | soilReports | weatherObservations | weatherAlerts | recommendations | diseaseDetections > yieldForecasts`. This consistent pattern is highly predictable and simplifies rule writing to a clear `if request.auth.uid == {userId} && resource.data.ownerId == {userId} && resource.data.parentCollectionId == {parentCollectionId} ...` logic.\n\n**Data Clarity and Predictability:** Wildcards are descriptive (e.g., `{userId}`, `{farmId}`, `{fieldId}`). The schemas include `createdAt` and `updatedAt` for invariants. The explicit denormalization of `ownerId`, `farmId`, `fieldId`, `cropCycleId` (where applicable) further enhances predictability, making it clear which fields are used for authorization at a glance."
+    "reasoning": "The recommended Firestore structure prioritizes strict user ownership and authorization independence, crucial for a secure and scalable AgriGrow AI application. All user-specific data is encapsulated within a `/users/{userId}` path, making security rules straightforward and highly performant. The core principle of **Authorization Independence** is achieved through systematic denormalization: for every subcollection nested under a user's `farmField` (e.g., `yieldRecords`, `soilReports`, `yieldForecasts`, `recommendations`, `weatherData`, `diseaseDetectionReports`), the `userId` and `farmFieldId` are explicitly included as fields within each document. This eliminates the need for expensive and complex `get()` operations in security rules to check parent document ownership, allowing atomic rule evaluation and simplifying debugging. For example, a rule for a `yieldRecord` can directly verify `request.auth.uid == resource.data.userId` and `resource.data.farmFieldId == farmFieldId` (from the path), ensuring only the field owner can access their records.\n\n**Querying for All Permitted Documents (QAPs)** is directly supported by this structure. Since `userId` is part of the path for all user-owned data, `list` operations can efficiently leverage Firestore's native security capabilities. For instance, to retrieve all `farmFields` for the authenticated user, a query to `/users/{request.auth.uid}/farmFields` will naturally return only authorized documents. Similarly, to fetch all `yieldRecords` for a particular `farmField`, the query to `/users/{request.auth.uid}/farmFields/{farmFieldId}/yieldRecords` is secure because the path itself restricts access to the authenticated user's data, and the denormalized `userId` and `farmFieldId` in the documents further reinforce this, allowing simple `allow read: if request.auth.uid == userId;` type rules. The global `crops` collection, containing reference data, stands as a top-level collection, accessible to all users for read operations, maintaining a homogeneous security posture for shared data. This design prevents `get()` calls in rules, simplifies rule logic to direct `request.auth.uid` checks, and naturally supports efficient, secure queries."
   }
 }
