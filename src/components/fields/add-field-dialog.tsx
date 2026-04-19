@@ -19,8 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, Sprout, MapPin, Save, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -31,7 +31,7 @@ interface AddFieldDialogProps {
 export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { firestore } = useFirestore();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,14 +42,8 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
   const [cropType, setCropType] = useState('Maize');
   const [location, setLocation] = useState('');
   const [soilType, setSoilType] = useState('Loamy');
-  const [irrigation, setIrrigation] = useState('Rainfed');
   const [ph, setPh] = useState([6.5]);
-  const [nitrogen, setNitrogen] = useState('Optimal');
-  const [phosphorus, setPhosphorus] = useState('Optimal');
-  const [potassium, setPotassium] = useState('Optimal');
-  const [moisture, setMoisture] = useState('35');
   const [area, setArea] = useState('2');
-  const [lastYield, setLastYield] = useState('1000');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -67,32 +61,25 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
 
     setIsSubmitting(true);
 
+    const fieldId = crypto.randomUUID();
     const fieldData = {
+      id: fieldId,
       userId: user.uid,
       name,
-      currentCropTypeId: cropType,
+      currentCropId: cropType,
       locationDescription: location,
       soilType,
-      irrigationMethod: irrigation,
       soilPH: ph[0],
-      nutrients: { 
-        nitrogen, 
-        phosphorus, 
-        potassium, 
-        moisture: Number(moisture) 
-      },
-      areaAmount: Number(area),
-      areaUnit: 'Acres',
-      yieldHistoryAmount: Number(lastYield),
-      plantingDate: sowingDate ? sowingDate.toISOString() : new Date().toISOString(),
-      status: 'Healthy',
-      createdAt: new Date().toISOString()
+      area: Number(area),
+      unitOfArea: 'Acres',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-    const colRef = collection(firestore, 'users', user.uid, 'farmFields');
+    const docRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
     
     try {
-      await addDocumentNonBlocking(colRef, fieldData);
+      setDocumentNonBlocking(docRef, fieldData, { merge: true });
       toast({ title: 'Success', description: `${name} has been added to your field list.` });
       setOpen(false);
       resetForm();
@@ -108,11 +95,9 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
     setCropType('Maize');
     setLocation('');
     setSoilType('Loamy');
-    setIrrigation('Rainfed');
     setPh([6.5]);
     setSowingDate(undefined);
     setArea('2');
-    setLastYield('1000');
   };
 
   return (
@@ -166,7 +151,6 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
                       <SelectItem value="Wheat">Wheat (गेहूं)</SelectItem>
                       <SelectItem value="Rice">Rice (चावल)</SelectItem>
                       <SelectItem value="Soybean">Soybean (सोयाबीन)</SelectItem>
-                      <SelectItem value="Sugarcane">Sugarcane (गन्ना)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -191,51 +175,6 @@ export function AddFieldDialog({ trigger }: AddFieldDialogProps) {
                   <span className="font-bold text-primary text-lg">{ph[0]}</span>
                 </div>
                 <Slider value={ph} onValueChange={setPh} max={14} step={0.1} className="py-4" />
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 rounded-2xl bg-muted/20 border border-muted/50">
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Nitrogen</span>
-                  <Select value={nitrogen} onValueChange={setNitrogen}>
-                    <SelectTrigger className="h-10 bg-white border-none shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Optimal">Optimal</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Phosphorus</span>
-                  <Select value={phosphorus} onValueChange={setPhosphorus}>
-                    <SelectTrigger className="h-10 bg-white border-none shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Optimal">Optimal</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Potassium</span>
-                  <Select value={potassium} onValueChange={setPotassium}>
-                    <SelectTrigger className="h-10 bg-white border-none shadow-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Optimal">Optimal</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center block">Moist %</span>
-                  <Input 
-                    type="number" 
-                    value={moisture} 
-                    onChange={(e) => setMoisture(e.target.value)} 
-                    className="h-10 bg-white border-none shadow-sm text-center" 
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
