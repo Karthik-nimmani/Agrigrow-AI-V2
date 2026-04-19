@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -103,11 +102,14 @@ export default function AssistantPage() {
 
     } catch (err: any) {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
+      const isNotFoundError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
       
       let errorMessage = `AI Error: ${err.message || "I encountered an unexpected problem. Please try again."}`;
       
       if (isQuotaError) {
         errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
+      } else if (isNotFoundError) {
+        errorMessage = "The AI model configuration is temporarily unavailable. This is likely a maintenance issue with the Gemini service. Please try again in a few minutes.";
       }
 
       const errorMsgId = crypto.randomUUID();
@@ -180,8 +182,8 @@ export default function AssistantPage() {
         </CardHeader>
         
         <CardContent className="flex-1 p-0 overflow-hidden relative bg-muted/5">
-          <ScrollArea className="h-full px-4 md:px-6">
-            <div className="py-6 space-y-6">
+          <ScrollArea className="h-full">
+            <div className="px-4 md:px-6 py-6 space-y-6">
               {(!messages || messages.length === 0) && !isBotThinking && (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40 py-20">
                   <MessageSquare className="w-12 h-12" />
