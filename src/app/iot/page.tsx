@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ConnectDeviceDialog } from '@/components/iot/connect-device-dialog';
+import Link from 'next/link';
 
 export default function IoTHubPage() {
   return (
@@ -150,9 +151,11 @@ export default function IoTHubPage() {
               AgriGrow AI is open-source compatible. Use ESP32 or Arduino nodes to feed custom sensor data into our predictive models.
             </p>
           </div>
-          <Button variant="outline" className="rounded-xl h-12 px-8 font-bold border-primary text-primary hover:bg-primary/5">
-            View Developer Docs <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
+          <Link href="/iot/docs">
+            <Button variant="outline" className="rounded-xl h-12 px-8 font-bold border-primary text-primary hover:bg-primary/5">
+              View Developer Docs <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </Link>
         </div>
       </Card>
     </div>
