@@ -31,6 +31,7 @@ export async function aiActionableCropRecommendations(input: AiActionableCropRec
 
 const aiActionableCropRecommendationsPrompt = ai.definePrompt({
   name: 'aiActionableCropRecommendationsPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: AiActionableCropRecommendationsInputSchema},
   output: {schema: AiActionableCropRecommendationsOutputSchema},
   prompt: `You are an expert agricultural advisor. Your task is to provide concise, actionable recommendations to a farmer to optimize their agricultural practices and improve yields. Based on the provided field data and yield forecast, generate specific, practical advice.

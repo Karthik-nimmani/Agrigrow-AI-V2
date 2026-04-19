@@ -53,6 +53,7 @@ export async function aiWeatherBasedCropAdvice(
 
 const aiWeatherBasedCropAdvicePrompt = ai.definePrompt({
   name: 'aiWeatherBasedCropAdvicePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: AiWeatherBasedCropAdviceInputSchema},
   output: {schema: AiWeatherBasedCropAdviceOutputSchema},
   prompt: `You are an expert agricultural advisor. Your task is to analyze local weather data and crop information to provide dynamic alerts and proactive advice to farmers.
