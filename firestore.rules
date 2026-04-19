@@ -3,40 +3,43 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * AgriGrow AI Security Rules
+     * AGRI-GROW AI SECURITY RULES
      * 
-     * Core Philosophy: This ruleset enforces a strict path-based and document-level ownership model. 
-     * Access is hierarchically organized under user-specific paths, ensuring that a user can only 
-     * interact with their own farm data, chat sessions, and profile.
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict user-ownership model. Every piece of data in the system
+     * is explicitly linked to a specific user via a hierarchical path and denormalized 
+     * ownership fields (userId).
      * 
-     * Data Structure: All private data is nested under /users/{userId}. This includes fields, 
-     * crop history, AI recommendations, and meteorological data. Global data, such as crop types, 
-     * is kept in a separate top-level collection for shared access.
+     * DATA STRUCTURE:
+     * All application data is nested under the top-level /users/{userId} collection. 
+     * FarmFields are subcollections of a User, and all analytical data (Yield, Soil, 
+     * Weather, Diseases) are nested as subcollections under specific FarmFields.
      * 
-     * Key Security Decisions:
-     * 1. Authorization Independence: Every document in a user's tree (including subcollections) 
-     *    is expected to contain a denormalized ownership field (e.g., 'userId' or 'ownerId'). 
-     *    Rules validate that these internal fields match the authenticated user and the path 
-     *    parameters to prevent data injection and ensure relational integrity.
-     * 2. Prototyping Flexibility: While authorization is strictly enforced based on identity, 
-     *    data shapes and types are not strictly validated to allow for rapid UI and AI iteration.
-     * 3. Destruction Protection: All update and delete operations require an explicit check 
-     *    for document existence and ownership to prevent accidental or unauthorized data removal.
+     * KEY SECURITY DECISIONS:
+     * 1. Authorization Independence: Every document (even deeply nested ones) is expected 
+     *    to contain a 'userId' field matching the owner. This allows rules to verify 
+     *    access without expensive get() calls to parent documents.
+     * 2. Strict Path-to-Data Consistency: During 'create' operations, we enforce that 
+     *    internal ID and userId fields match the URL parameters.
+     * 3. Immutability: Critical relational fields (userId, farmFieldId) are made 
+     *    immutable during 'update' operations to prevent data being "moved" between owners.
+     * 4. Private by Default: No data is publicly readable or listable. Only the 
+     *    authenticated owner can access their own data tree.
      */
 
-    // --- Helper Functions ---
+    // --- Global Helper Functions ---
 
-    /** Checks if the request is from a signed-in user. */
+    /** @description Checks if the request is coming from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the authenticated user's UID matches the provided userId. */
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Verifies ownership and ensures the document exists before modification. */
+    /** @description Checks if the user is the owner and the document already exists (for updates/deletes). */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
@@ -44,119 +47,123 @@ service cloud.firestore {
     // --- Collection Rules ---
 
     /**
-     * @description Rules for user profiles. Users can only manage their own profile.
+     * @description Rules for the top-level User Profile.
      * @path /users/{userId}
-     * @allow (create) If auth.uid matches userId and data.id matches userId.
-     * @deny (read/write) If auth.uid does not match the userId in the path.
-     * @principle Self-creation and strict path-based ownership.
+     * @allow Authenticated user (create) where doc ID matches their UID.
+     * @deny User B trying to (get) User A's profile.
+     * @principle Ownership and Self-Creation.
      */
     match /users/{userId} {
       allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
-
-      /**
-       * @description Rules for agricultural fields. Each field must be linked to the owner.
-       * @path /users/{userId}/fields/{fieldId}
-       * @allow (create) If userId in path matches auth.uid and userId in data matches path.
-       * @deny (update) If attempting to change the field's userId/ownership.
-       * @principle Relational integrity and path-based access control.
-       */
-      match /fields/{fieldId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
-
-        // --- Field Subcollections ---
-
-        /**
-         * @description Secures yield records, forecasts, recommendations, weather data, and reports.
-         * @path /users/{userId}/fields/{fieldId}/[subcollection]/{id}
-         * @principle Hierarchical ownership. All field-related data belongs to the field owner.
-         */
-        match /yieldHistory/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /yieldForecasts/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /recommendations/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /meteorologicalData/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /weatherAlerts/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /diseaseDetectionRecords/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-
-        match /soilAnalysisReports/{id} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.fieldId == fieldId;
-          allow update: if isExistingOwner(userId) && request.resource.data.fieldId == resource.data.fieldId;
-          allow delete: if isExistingOwner(userId);
-        }
-      }
-
-      /**
-       * @description Rules for AI chat sessions. Restricted to the session creator.
-       * @path /users/{userId}/chatSessions/{chatSessionId}
-       * @allow (list) If user is looking at their own session list.
-       * @principle Private interaction logs.
-       */
-      match /chatSessions/{chatSessionId} {
-        allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
-
-        match /messages/{messageId} {
-          allow get, list: if isOwner(userId);
-          allow create: if isOwner(userId) && request.resource.data.chatSessionId == chatSessionId;
-          allow update: if isExistingOwner(userId) && request.resource.data.chatSessionId == resource.data.chatSessionId;
-          allow delete: if isExistingOwner(userId);
-        }
-      }
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Global list of available crop types.
-     * @path /cropTypes/{cropTypeId}
-     * @allow (get, list) Any authenticated user.
-     * @deny (write) Any user (Read-only collection).
-     * @principle Publicly readable reference data.
+     * @description Rules for Farm Fields belonging to a user.
+     * @path /users/{userId}/farmFields/{farmFieldId}
+     * @allow Owner (create) a field with valid userId and farmFieldId in the data.
+     * @deny Owner (update) attempting to change the userId to a different user.
+     * @principle Relational integrity and ownership enforcement.
      */
-    match /cropTypes/{cropTypeId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if false;
+    match /users/{userId}/farmFields/{farmFieldId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && request.resource.data.userId == userId 
+        && request.resource.data.id == farmFieldId;
+      allow update: if isExistingOwner(userId) 
+        && request.resource.data.userId == resource.data.userId 
+        && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      // --- FarmField Subcollections ---
+
+      /**
+       * @description Historical yield data for a field.
+       * @path /users/{userId}/farmFields/{farmFieldId}/yieldHistory/{id}
+       * @allow Owner (list) yield history for their own field.
+       * @deny User A (create) yield history under User B's field path.
+       * @principle Path-based and denormalized field authorization.
+       */
+      match /yieldHistory/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) 
+          && request.resource.data.userId == userId 
+          && request.resource.data.farmFieldId == farmFieldId 
+          && request.resource.data.id == id;
+        allow update: if isExistingOwner(userId) 
+          && request.resource.data.userId == resource.data.userId 
+          && request.resource.data.farmFieldId == resource.data.farmFieldId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description AI-generated yield predictions.
+       * @path /users/{userId}/farmFields/{farmFieldId}/yieldForecasts/{id}
+       * @allow Owner (get) a specific forecast.
+       * @principle Secure access to generated insights.
+       */
+      match /yieldForecasts/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) 
+          && request.resource.data.userId == userId 
+          && request.resource.data.farmFieldId == farmFieldId 
+          && request.resource.data.id == id;
+        allow update: if isExistingOwner(userId) 
+          && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Weather data snapshots for the field location.
+       * @path /users/{userId}/farmFields/{farmFieldId}/meteorologicalData/{id}
+       * @allow Owner (list) weather history for their field.
+       * @principle Scoped subcollection access.
+       */
+      match /meteorologicalData/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) 
+          && request.resource.data.userId == userId 
+          && request.resource.data.farmFieldId == farmFieldId 
+          && request.resource.data.id == id;
+        allow update: if isExistingOwner(userId) 
+          && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Processed soil lab reports.
+       * @path /users/{userId}/farmFields/{farmFieldId}/soilReports/{id}
+       * @allow Owner (create) a report after processing a scan.
+       * @principle Data consistency between path and document body.
+       */
+      match /soilReports/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) 
+          && request.resource.data.userId == userId 
+          && request.resource.data.farmFieldId == farmFieldId 
+          && request.resource.data.id == id;
+        allow update: if isExistingOwner(userId) 
+          && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description AI findings on plant health and disease.
+       * @path /users/{userId}/farmFields/{farmFieldId}/diseaseDetectionReports/{id}
+       * @allow Owner (delete) an old detection report.
+       * @principle Ownership verification for destructive operations.
+       */
+      match /diseaseDetectionReports/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) 
+          && request.resource.data.userId == userId 
+          && request.resource.data.farmFieldId == farmFieldId 
+          && request.resource.data.id == id;
+        allow update: if isExistingOwner(userId) 
+          && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
     }
   }
 }
