@@ -14,6 +14,18 @@ import {
   Trash2
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const INITIAL_FIELDS = [
   { id: 1, name: 'Maize', area: '2.5 Acres', ph: '6.2', lastSeason: '1200 kg', status: 'Healthy' },
@@ -25,13 +37,23 @@ const INITIAL_FIELDS = [
 export default function FieldsPage() {
   const [fields, setFields] = useState(INITIAL_FIELDS);
   const [search, setSearch] = useState('');
+  const { toast } = useToast();
 
   const filteredFields = fields.filter(f => 
     f.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleDelete = (id: number) => {
+    const fieldToDelete = fields.find(f => f.id === id);
+    setFields(fields.filter(f => f.id !== id));
+    toast({
+      title: "Field deleted",
+      description: `${fieldToDelete?.name} has been removed from your list.`,
+    });
+  };
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 py-8">
+    <div className="max-w-5xl mx-auto space-y-8 py-8 px-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -61,49 +83,75 @@ export default function FieldsPage() {
 
       {/* Field List */}
       <div className="space-y-4">
-        {filteredFields.map((field) => (
-          <Card key={field.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden">
-            <CardContent className="p-0 flex">
-              {/* Field Information Container */}
-              <div className="flex-1 flex items-center p-6 gap-6">
-                {/* Icon Container */}
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                  <Sprout className="w-8 h-8 text-primary" />
-                </div>
-
-                {/* Text Content */}
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
-                    <div className="flex gap-2">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
-                        {field.area}
-                      </Badge>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
-                        pH {field.ph}
-                      </Badge>
-                    </div>
+        {filteredFields.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
+            <p className="text-muted-foreground">No fields found matching your search.</p>
+          </div>
+        ) : (
+          filteredFields.map((field) => (
+            <Card key={field.id} className="border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden">
+              <CardContent className="p-0 flex">
+                {/* Field Information Container */}
+                <div className="flex-1 flex items-center p-6 gap-6">
+                  {/* Icon Container */}
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                    <Sprout className="w-8 h-8 text-primary" />
                   </div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    Last Season: <span className="font-bold text-slate-900">{field.lastSeason}</span>
-                  </p>
-                </div>
-              </div>
 
-              {/* Actions Sidebar */}
-              <div className="w-16 flex flex-col items-center justify-between py-4 border-l border-slate-50">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-transparent">
-                  <Trash2 className="w-5 h-5" />
-                </Button>
-                <Link href={`/fields/${field.id}`}>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all">
-                    <ChevronRight className="w-6 h-6" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  {/* Text Content */}
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
+                      <div className="flex gap-2">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                          {field.area}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
+                          pH {field.ph}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground text-sm font-medium">
+                      Last Season: <span className="font-bold text-slate-900">{field.lastSeason}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions Sidebar */}
+                <div className="w-16 flex flex-col items-center justify-between py-4 border-l border-slate-50">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-transparent">
+                        <Trash2 className="w-5 h-5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your
+                          field record and all associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(field.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <Link href={`/fields/${field.id}`}>
+                    <Button variant="ghost" size="icon" className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all">
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
