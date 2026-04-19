@@ -173,7 +173,7 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
             </div>
           )}
         </div>
-      </div>
+      </DialogContent>
     </Dialog>
   );
 }
