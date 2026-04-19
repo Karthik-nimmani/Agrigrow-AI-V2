@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -16,20 +17,18 @@ import {
   Droplets,
   Wind,
   RefreshCw,
-  Info,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
-
-const FIELDS = [
-  { id: 1, name: 'Maize Field', crop: 'Maize', location: 'Punjab Region', area: '2.5 Acres', ph: '6.2', status: 'Healthy' },
-  { id: 2, name: 'Wheat Field', crop: 'Wheat', location: 'Punjab Region', area: '1.8 Acres', ph: '5.8', status: 'Attention Needed' },
-  { id: 3, name: 'Sakhinetipalli', crop: 'Maize', location: 'Coastal Andhra', area: '2 Acres', ph: '6.5', status: 'Healthy' },
-  { id: 4, name: 'LPU Experimental', crop: 'Rice', location: 'Phagwara', area: '2.3 Acres', ph: '5.4', status: 'Alert' },
-];
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function Dashboard() {
+  const { firestore } = useFirestore();
+  const { user } = useUser();
+  
   const [weatherData, setWeatherData] = useState({
     temp: 24,
     humidity: 62,
@@ -40,13 +39,24 @@ export default function Dashboard() {
   const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Real-time Fields Synchronization
+  const fieldsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'fields');
+  }, [firestore, user]);
+
+  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
+
+  const totalArea = fields?.reduce((acc, f) => acc + (f.areaAmount || 0), 0) || 0;
+  const potentialYield = fields?.reduce((acc, f) => acc + (f.yieldHistoryAmount || 0), 0) || 0;
+  const alertCount = fields?.filter(f => f.status === 'Alert' || f.status === 'Attention Needed').length || 0;
+
   const fetchWeatherIntelligence = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate real-time sync
       const res = await aiWeatherBasedCropAdvice({
         location: weatherData.location,
-        cropType: "Wheat & Maize",
+        cropType: fields?.length ? fields[0].currentCropTypeId : "Wheat & Maize",
         currentConditions: {
           temperature: weatherData.temp,
           humidity: weatherData.humidity,
@@ -66,7 +76,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchWeatherIntelligence();
-  }, []);
+  }, [fields]);
 
   return (
     <div className="space-y-8">
@@ -107,7 +117,6 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Live Metrics */}
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-center p-3 rounded-2xl bg-muted/30">
@@ -134,7 +143,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* AI Insight Section */}
             <div className="lg:col-span-2">
               <div className={`h-full rounded-2xl p-5 relative overflow-hidden flex flex-col justify-center border ${weatherAdvice?.riskDetected ? 'bg-amber-50 border-amber-200' : 'bg-primary/5 border-primary/10'}`}>
                 {weatherAdvice?.riskDetected && (
@@ -142,7 +150,6 @@ export default function Dashboard() {
                     Dynamic Alert
                   </div>
                 )}
-                
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-full shrink-0 ${weatherAdvice?.riskDetected ? 'bg-amber-100' : 'bg-primary/20'}`}>
                     <Sparkles className={`w-6 h-6 ${weatherAdvice?.riskDetected ? 'text-amber-700' : 'text-primary'}`} />
@@ -176,7 +183,7 @@ export default function Dashboard() {
               <span className="text-xs font-bold uppercase tracking-wider">Total Area</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-bold tracking-tight">8.6</span>
+              <span className="text-5xl font-bold tracking-tight">{totalArea.toFixed(1)}</span>
               <span className="text-xl font-medium opacity-80">Acres</span>
             </div>
           </CardContent>
@@ -189,11 +196,11 @@ export default function Dashboard() {
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Potential Yield</span>
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-5xl font-bold text-slate-800 tracking-tight">5,900</span>
+              <span className="text-5xl font-bold text-slate-800 tracking-tight">{potentialYield.toLocaleString()}</span>
               <span className="text-xl font-medium text-slate-500">kg</span>
             </div>
             <p className="text-sm font-bold text-green-600 flex items-center gap-1">
-              +15.7% <span className="text-muted-foreground font-normal">vs Last Season</span>
+              Live estimate <span className="text-muted-foreground font-normal">from synced fields</span>
             </p>
           </CardContent>
         </Card>
@@ -205,10 +212,10 @@ export default function Dashboard() {
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active Alerts</span>
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-5xl font-bold text-slate-800 tracking-tight">2</span>
+              <span className="text-5xl font-bold text-slate-800 tracking-tight">{alertCount}</span>
               <span className="text-sm text-muted-foreground ml-2 font-medium">Critical</span>
             </div>
-            <p className="text-sm font-bold text-destructive">Needs AI Analysis</p>
+            <p className="text-sm font-bold text-destructive">Requires attention</p>
           </CardContent>
         </Card>
       </div>
@@ -224,50 +231,59 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {FIELDS.map((field) => (
-            <Link key={field.id} href={`/fields/${field.id}`}>
-              <Card className="hover:shadow-md transition-all border-none bg-white overflow-hidden group cursor-pointer border border-transparent hover:border-primary/20">
-                <CardContent className="p-0 flex">
-                  {/* Left Icon Panel */}
-                  <div className="w-24 md:w-32 bg-muted/20 flex flex-col items-center justify-center gap-2 py-8 border-r">
-                    <Sprout className={`w-8 h-8 ${field.status === 'Alert' ? 'text-destructive/60' : 'text-primary/60'}`} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{field.crop}</span>
-                  </div>
-                  
-                  {/* Right Info Panel */}
-                  <div className="flex-1 p-6 relative">
-                    <div className={`absolute top-4 right-4 w-2 h-2 rounded-full ${field.status === 'Healthy' ? 'bg-green-400' : 'bg-amber-400 animate-pulse'}`} />
-                    <h3 className="text-xl font-bold font-headline mb-1 group-hover:text-primary transition-colors">{field.name}</h3>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
-                      <MapPin className="w-3 h-3" />
-                      <span>{field.location}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm mb-6">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Area</span>
-                        <span className="font-bold text-slate-700">{field.area}</span>
-                      </div>
-                      <div className="h-4 w-px bg-muted-foreground/20" />
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground">pH Level</span>
-                        <span className="font-bold text-slate-700">{field.ph}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between border-t pt-4">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Condition</span>
-                      <Badge variant={field.status === 'Healthy' ? 'secondary' : 'outline'} className="text-[9px] uppercase tracking-tighter">
-                        {field.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+        {isFieldsLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="w-10 h-10 animate-spin text-primary/30" />
+          </div>
+        ) : !fields || fields.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed flex flex-col items-center gap-4">
+            <Sprout className="w-12 h-12 text-muted-foreground/20" />
+            <p className="text-muted-foreground">No fields synced. Add your first field to start monitoring.</p>
+            <Link href="/fields/new">
+              <Button variant="outline" className="rounded-full">Register New Field</Button>
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {fields.map((field) => (
+              <Link key={field.id} href={`/fields/${field.id}`}>
+                <Card className="hover:shadow-md transition-all border-none bg-white overflow-hidden group cursor-pointer border border-transparent hover:border-primary/20">
+                  <CardContent className="p-0 flex">
+                    <div className="w-24 md:w-32 bg-muted/20 flex flex-col items-center justify-center gap-2 py-8 border-r">
+                      <Sprout className={`w-8 h-8 ${field.status === 'Alert' ? 'text-destructive/60' : 'text-primary/60'}`} />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center px-2">{field.currentCropTypeId}</span>
+                    </div>
+                    <div className="flex-1 p-6 relative">
+                      <div className={`absolute top-4 right-4 w-2 h-2 rounded-full ${field.status === 'Healthy' ? 'bg-green-400' : 'bg-amber-400 animate-pulse'}`} />
+                      <h3 className="text-xl font-bold font-headline mb-1 group-hover:text-primary transition-colors">{field.name}</h3>
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
+                        <MapPin className="w-3 h-3" />
+                        <span>{field.locationDescription || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm mb-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground">Area</span>
+                          <span className="font-bold text-slate-700">{field.areaAmount} {field.areaUnit}</span>
+                        </div>
+                        <div className="h-4 w-px bg-muted-foreground/20" />
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground">pH Level</span>
+                          <span className="font-bold text-slate-700">{field.soilPH}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-4">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Condition</span>
+                        <Badge variant={field.status === 'Healthy' ? 'secondary' : 'outline'} className="text-[9px] uppercase tracking-tighter">
+                          {field.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Floating Action Buttons */}
@@ -277,9 +293,11 @@ export default function Dashboard() {
             <Bot className="w-6 h-6" />
           </Button>
         </Link>
-        <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
-          <Plus className="w-8 h-8" />
-        </Button>
+        <Link href="/fields/new">
+          <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
+            <Plus className="w-8 h-8" />
+          </Button>
+        </Link>
       </div>
     </div>
   );

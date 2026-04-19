@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -11,7 +12,8 @@ import {
   Filter, 
   ChevronRight,
   Sprout,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -26,29 +28,33 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-
-const INITIAL_FIELDS = [
-  { id: 1, name: 'Maize', area: '2.5 Acres', ph: '6.2', lastSeason: '1200 kg', status: 'Healthy' },
-  { id: 2, name: 'Wheat', area: '1.8 Acres', ph: '5.8', lastSeason: '900 kg', status: 'Alert' },
-  { id: 3, name: 'Maize', area: '2 Acres', ph: '6.5', lastSeason: '1000 kg', status: 'Healthy' },
-  { id: 4, name: 'Rice', area: '2.3 Acres', ph: '5.4', lastSeason: '2000 kg', status: 'Alert' },
-];
+import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 export default function FieldsPage() {
-  const [fields, setFields] = useState(INITIAL_FIELDS);
-  const [search, setSearch] = useState('');
+  const { firestore } = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
+  const [search, setSearch] = useState('');
 
-  const filteredFields = fields.filter(f => 
+  const fieldsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'fields');
+  }, [firestore, user]);
+
+  const { data: fields, isLoading } = useCollection(fieldsQuery);
+
+  const filteredFields = fields?.filter(f => 
     f.name.toLowerCase().includes(search.toLowerCase())
-  );
+  ) || [];
 
-  const handleDelete = (id: number) => {
-    const fieldToDelete = fields.find(f => f.id === id);
-    setFields(fields.filter(f => f.id !== id));
+  const handleDelete = (fieldId: string) => {
+    if (!user || !firestore) return;
+    const fieldRef = doc(firestore, 'users', user.uid, 'fields', fieldId);
+    deleteDocumentNonBlocking(fieldRef);
     toast({
       title: "Field deleted",
-      description: `${fieldToDelete?.name} has been removed from your list.`,
+      description: `The field record has been removed.`,
     });
   };
 
@@ -60,9 +66,11 @@ export default function FieldsPage() {
           <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">My Fields</h1>
           <p className="text-muted-foreground text-lg">Manage and track your cultivation areas.</p>
         </div>
-        <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90">
-          <Plus className="w-5 h-5" /> Add New Field
-        </Button>
+        <Link href="/fields/new">
+          <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90">
+            <Plus className="w-5 h-5" /> Add New Field
+          </Button>
+        </Link>
       </div>
 
       {/* Search and Filter Section */}
@@ -83,9 +91,21 @@ export default function FieldsPage() {
 
       {/* Field List */}
       <div className="space-y-4">
-        {filteredFields.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
-            <p className="text-muted-foreground">No fields found matching your search.</p>
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Syncing your fields...</p>
+          </div>
+        ) : filteredFields.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed flex flex-col items-center gap-4">
+            <Sprout className="w-12 h-12 text-muted-foreground/30" />
+            <div className="space-y-1">
+              <h3 className="font-bold text-xl">No fields found</h3>
+              <p className="text-muted-foreground">Start by adding your first cultivation area.</p>
+            </div>
+            <Link href="/fields/new">
+              <Button variant="outline" className="rounded-xl">Add New Field</Button>
+            </Link>
           </div>
         ) : (
           filteredFields.map((field) => (
@@ -104,15 +124,15 @@ export default function FieldsPage() {
                       <h3 className="text-2xl font-bold font-headline text-slate-800">{field.name}</h3>
                       <div className="flex gap-2">
                         <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
-                          {field.area}
+                          {field.areaAmount} {field.areaUnit}
                         </Badge>
                         <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-medium px-3 py-1 rounded-lg border-none">
-                          pH {field.ph}
+                          pH {field.soilPH}
                         </Badge>
                       </div>
                     </div>
                     <p className="text-muted-foreground text-sm font-medium">
-                      Last Season: <span className="font-bold text-slate-900">{field.lastSeason}</span>
+                      Crop: <span className="font-bold text-slate-900">{field.currentCropTypeId}</span>
                     </p>
                   </div>
                 </div>
@@ -127,10 +147,9 @@ export default function FieldsPage() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Field?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          field record and all associated data.
+                          This will permanently remove "{field.name}" and all associated data. This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
