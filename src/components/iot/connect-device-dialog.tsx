@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,28 +12,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wifi, Smartphone, Plus, Info, Loader2, ArrowLeft, Signal, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Wifi, Smartphone, Plus, Info, Loader2, ArrowLeft, Signal, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ConnectDeviceDialogProps {
   trigger?: React.ReactNode;
 }
 
-type ConnectionStep = 'method' | 'code' | 'wifi' | 'scanning' | 'success';
-
-const MOCK_NETWORKS = [
-  { name: 'AgriSensor-Node-01', signal: 'strong', id: 'as-01' },
-  { name: 'AgriSensor-Node-04', signal: 'medium', id: 'as-04' },
-  { name: 'AgriGrow-Hub-v2', signal: 'weak', id: 'ag-h2' },
-];
+type ConnectionStep = 'method' | 'code' | 'wifi-instructions' | 'wifi-manual' | 'scanning' | 'success';
 
 export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<ConnectionStep>('method');
   const [code, setCode] = useState('');
+  const [ssid, setSsid] = useState('');
   const [isPairing, setIsPairing] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handlePairing = (e?: React.FormEvent) => {
@@ -53,8 +48,8 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
   const startWifiScan = () => {
     setStep('scanning');
     setTimeout(() => {
-      setStep('wifi');
-    }, 3000);
+      setStep('wifi-instructions');
+    }, 2500);
   };
 
   const resetDialog = (isOpen: boolean) => {
@@ -63,7 +58,7 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
       setTimeout(() => {
         setStep('method');
         setCode('');
-        setSelectedNetwork(null);
+        setSsid('');
       }, 300);
     }
   };
@@ -81,7 +76,7 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
         <div className="p-8 space-y-8">
           <DialogHeader className="space-y-2 text-left">
             <div className="flex items-center gap-2">
-              {['code', 'scanning', 'wifi'].includes(step) && (
+              {['code', 'scanning', 'wifi-instructions', 'wifi-manual'].includes(step) && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -98,14 +93,12 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
             <DialogDescription className="text-base text-muted-foreground">
               {step === 'success' 
                 ? 'Your device is now fully integrated into the AgriGrow ecosystem.' 
-                : 'Integrate IoT hardware via Wi-Fi or integration code.'}
+                : 'Choose a method to pair your hardware node.'}
             </DialogDescription>
           </DialogHeader>
 
           {step === 'method' && (
             <div className="space-y-6">
-              <p className="text-sm font-medium text-slate-500">Choose your connection method:</p>
-              
               <div className="grid gap-4">
                 <button 
                   onClick={startWifiScan}
@@ -114,7 +107,7 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
                   <div className="p-3 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
                     <Wifi className="w-6 h-6 text-primary" />
                   </div>
-                  <span className="font-bold text-slate-800">Setup via Device Wi-Fi</span>
+                  <span className="font-bold text-slate-800">Setup via Wi-Fi AP</span>
                 </button>
 
                 <button 
@@ -134,81 +127,48 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
             <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300 text-center py-4">
               <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
                 <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-ping" />
-                <div className="absolute inset-4 border-4 border-primary/40 rounded-full animate-ping [animation-delay:0.5s]" />
                 <div className="z-10 p-6 bg-primary/10 rounded-full">
                   <Wifi className="w-10 h-10 text-primary animate-pulse" />
                 </div>
               </div>
               <div className="space-y-2">
-                <h4 className="text-xl font-bold">Scanning for Modules</h4>
-                <p className="text-muted-foreground">Searching for nearby AgriSensor Wi-Fi nodes...</p>
+                <h4 className="text-xl font-bold">Scanning Local Hardware</h4>
+                <p className="text-muted-foreground">Searching for broadcast signals...</p>
               </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setStep('method')}
-                className="rounded-xl"
-              >
-                Cancel Scan
-              </Button>
             </div>
           )}
 
-          {step === 'wifi' && (
+          {step === 'wifi-instructions' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="p-4 bg-muted/30 rounded-2xl flex items-start gap-3 border">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-1" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Select the AgriSensor Wi-Fi network that matches the label on your physical hardware to begin pairing.
-                </p>
-              </div>
+              <Alert className="bg-blue-50 border-blue-100">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-blue-900 font-bold">Action Required</AlertTitle>
+                <AlertDescription className="text-blue-800 text-xs">
+                  For security, browsers cannot scan Wi-Fi signals directly. Please connect your computer/phone to the Wi-Fi network named <strong>"AgriSensor-XXXX"</strong> in your system settings first.
+                </AlertDescription>
+              </Alert>
 
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-800 ml-1">
-                  Detected Modules
-                </Label>
-                <div className="grid gap-2">
-                  {MOCK_NETWORKS.map((nw) => (
-                    <button
-                      key={nw.id}
-                      onClick={() => setSelectedNetwork(nw.id)}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left",
-                        selectedNetwork === nw.id 
-                          ? "border-primary bg-primary/5" 
-                          : "border-slate-100 hover:border-slate-200"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <Wifi className={cn(
-                            "w-4 h-4",
-                            selectedNetwork === nw.id ? "text-primary" : "text-muted-foreground"
-                          )} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-slate-800">{nw.name}</p>
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                            <Signal className="w-3 h-3" /> {nw.signal} signal
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-300" />
-                    </button>
-                  ))}
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Once connected to the sensor's broadcast network, enter the Module ID found on the label:
+                </p>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Module SSID / ID</Label>
+                  <Input 
+                    placeholder="e.g. AgriSensor-Node-01" 
+                    value={ssid}
+                    onChange={(e) => setSsid(e.target.value)}
+                    className="h-14 rounded-2xl bg-muted/30 border-none"
+                  />
                 </div>
               </div>
 
               <Button 
                 onClick={() => handlePairing()}
-                disabled={isPairing || !selectedNetwork}
-                className="w-full h-16 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20"
+                disabled={isPairing || !ssid.trim()}
+                className="w-full h-16 rounded-2xl text-lg font-bold shadow-xl"
               >
-                {isPairing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Connecting...
-                  </>
-                ) : 'Connect to Module'}
+                {isPairing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Confirm Connection'}
               </Button>
             </div>
           )}
@@ -216,17 +176,15 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
           {step === 'code' && (
             <form onSubmit={handlePairing} className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="p-6 bg-muted/40 rounded-3xl border border-muted flex gap-4 items-start">
-                <div className="p-1 rounded-full border border-muted-foreground/20">
-                  <Info className="w-4 h-4 text-muted-foreground" />
-                </div>
+                <Info className="w-5 h-5 text-primary shrink-0 mt-1" />
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Check the back of your sensor for a 6-digit alphanumeric code. Ensure the device is powered on and flashing blue.
+                  Enter the 6-digit code from your device label. Ensure the device status LED is <strong>flashing blue</strong>.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <Label className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 ml-1">
-                  Device Integration Code
+                  Integration Code
                 </Label>
                 <Input 
                   placeholder="e.g. AG-X942"
@@ -234,7 +192,6 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   className="h-16 text-center text-xl font-bold tracking-widest rounded-2xl bg-muted/30 border-none focus-visible:ring-primary"
                   autoFocus
-                  maxLength={10}
                 />
               </div>
 
@@ -243,12 +200,7 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
                 disabled={isPairing || !code.trim()}
                 className="w-full h-16 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90"
               >
-                {isPairing ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Pairing...
-                  </>
-                ) : 'Pair Device'}
+                {isPairing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Pair Device'}
               </Button>
             </form>
           )}
@@ -261,14 +213,14 @@ export function ConnectDeviceDialog({ trigger }: ConnectDeviceDialogProps) {
               <div className="space-y-2">
                 <h4 className="text-2xl font-bold text-slate-900">Module Synced</h4>
                 <p className="text-muted-foreground">
-                  The IoT Node is now sending data to your dashboard. You can configure calibration settings in the Hub menu.
+                  Your sensor is now transmitting data to the AgriGrow Cloud. Live telemetry is available in your IoT Hub.
                 </p>
               </div>
               <Button 
                 onClick={() => setOpen(false)}
                 className="w-full h-14 rounded-2xl font-bold"
               >
-                Go to Hub
+                Back to Dashboard
               </Button>
             </div>
           )}
