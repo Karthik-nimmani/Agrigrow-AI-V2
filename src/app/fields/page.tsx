@@ -30,6 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function FieldsPage() {
   const { firestore } = useFirestore();
@@ -66,11 +67,11 @@ export default function FieldsPage() {
           <h1 className="text-4xl font-bold font-headline mb-2 text-slate-900">My Fields</h1>
           <p className="text-muted-foreground text-lg">Manage and track your cultivation areas.</p>
         </div>
-        <Link href="/fields/new">
+        <AddFieldDialog trigger={
           <Button className="rounded-xl flex items-center gap-2 h-11 px-6 bg-primary hover:bg-primary/90">
             <Plus className="w-5 h-5" /> Add New Field
           </Button>
-        </Link>
+        } />
       </div>
 
       {/* Search and Filter Section */}
@@ -103,9 +104,7 @@ export default function FieldsPage() {
               <h3 className="font-bold text-xl">No fields found</h3>
               <p className="text-muted-foreground">Start by adding your first cultivation area.</p>
             </div>
-            <Link href="/fields/new">
-              <Button variant="outline" className="rounded-xl">Add New Field</Button>
-            </Link>
+            <AddFieldDialog trigger={<Button variant="outline" className="rounded-xl">Add New Field</Button>} />
           </div>
         ) : (
           filteredFields.map((field) => (

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -23,6 +24,7 @@ import Link from 'next/link';
 import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { AddFieldDialog } from '@/components/fields/add-field-dialog';
 
 export default function Dashboard() {
   const { firestore } = useFirestore();
@@ -41,6 +43,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
+    // Hydration safe initial update
     setWeatherData(prev => ({
       ...prev,
       lastUpdated: new Date().toLocaleTimeString()
@@ -76,17 +79,17 @@ export default function Dashboard() {
       setWeatherAdvice(res);
       setWeatherData(prev => ({ ...prev, lastUpdated: new Date().toLocaleTimeString() }));
     } catch (err) {
-      // Error is handled centrally, but we stop the loading state
+      // Error handled centrally
     } finally {
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (mounted) {
+    if (mounted && user) {
       fetchWeatherIntelligence();
     }
-  }, [fields, mounted]);
+  }, [fields, mounted, user]);
 
   return (
     <div className="space-y-8">
@@ -234,11 +237,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold font-headline">My Fields</h2>
-          <Link href="/fields/new">
-            <Button className="rounded-full flex items-center gap-2 px-6">
-              <Plus className="w-4 h-4" /> Add New Field
-            </Button>
-          </Link>
+          <AddFieldDialog />
         </div>
 
         {isFieldsLoading ? (
@@ -249,9 +248,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed flex flex-col items-center gap-4">
             <Sprout className="w-12 h-12 text-muted-foreground/20" />
             <p className="text-muted-foreground">No fields synced. Add your first field to start monitoring.</p>
-            <Link href="/fields/new">
-              <Button variant="outline" className="rounded-full">Register New Field</Button>
-            </Link>
+            <AddFieldDialog trigger={<Button variant="outline" className="rounded-full">Register New Field</Button>} />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -303,11 +300,11 @@ export default function Dashboard() {
             <Bot className="w-6 h-6" />
           </Button>
         </Link>
-        <Link href="/fields/new">
+        <AddFieldDialog trigger={
           <Button size="icon" className="w-16 h-16 rounded-full bg-primary shadow-xl text-white hover:bg-primary/90 hover:scale-110 transition-transform">
             <Plus className="w-8 h-8" />
           </Button>
-        </Link>
+        } />
       </div>
     </div>
   );
