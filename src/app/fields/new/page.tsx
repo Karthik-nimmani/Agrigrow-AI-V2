@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,13 +39,7 @@ export default function AddNewFieldPage() {
   const [area, setArea] = useState('2');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  const detectLocation = () => {
+  const detectLocation = useCallback(() => {
     if (!("geolocation" in navigator)) {
       toast({ 
         variant: 'destructive', 
@@ -82,17 +76,36 @@ export default function AddNewFieldPage() {
         }
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        let errorMsg = 'Could not access your location. Please enter manually.';
+        
+        // Detailed error messages based on Geolocation error codes
+        if (error.code === 1) {
+          errorMsg = 'Location permission denied. Please allow access in browser settings.';
+        } else if (error.code === 2) {
+          errorMsg = 'Location unavailable. Please check your signal and try again.';
+        } else if (error.code === 3) {
+          errorMsg = 'Location detection timed out. Please try again or enter manually.';
+        }
+
         setIsDetecting(false);
         toast({ 
           variant: 'destructive', 
           title: 'Detection Failed', 
-          description: 'Could not access your location. Please check permissions or enter manually.' 
+          description: errorMsg 
         });
       },
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    } else if (user && !location && !latitude) {
+      // Auto-trigger location detection on mount
+      detectLocation();
+    }
+  }, [user, isUserLoading, router, detectLocation, location, latitude]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,8 +151,6 @@ export default function AddNewFieldPage() {
       toast({ title: 'Field Added', description: `${name} has been successfully registered.` });
       router.push('/fields');
     } catch (error) {
-      console.error('Error adding field:', error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Could not register field. Please try again.' });
       setIsSubmitting(false);
     }
   };
