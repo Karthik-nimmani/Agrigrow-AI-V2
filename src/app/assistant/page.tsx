@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -51,7 +50,9 @@ export default function AssistantPage() {
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
@@ -101,11 +102,14 @@ export default function AssistantPage() {
 
     } catch (err: any) {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
+      const isConfigError = err.message?.includes('404') || err.message?.includes('not found');
       
       let errorMessage = "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
       
       if (isQuotaError) {
         errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
+      } else if (isConfigError) {
+        errorMessage = "I'm undergoing some configuration maintenance. My team is aware and fixing me right now!";
       }
 
       const errorMsgId = crypto.randomUUID();
@@ -143,7 +147,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] md:h-[calc(100vh-100px)] flex flex-col p-4 overflow-hidden">
+    <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col p-4 overflow-hidden">
       <Card className="flex-1 flex flex-col border-none shadow-xl bg-white overflow-hidden rounded-3xl">
         <CardHeader className="bg-primary/5 border-b py-4 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
@@ -177,7 +181,7 @@ export default function AssistantPage() {
           </div>
         </CardHeader>
         
-        <CardContent className="flex-1 p-0 overflow-hidden relative">
+        <CardContent className="flex-1 p-0 overflow-hidden relative bg-muted/5">
           <ScrollArea className="h-full px-4 md:px-6">
             <div className="py-6 space-y-6">
               {(!messages || messages.length === 0) && !isBotThinking && (
@@ -198,7 +202,7 @@ export default function AssistantPage() {
                         ? 'bg-primary text-primary-foreground rounded-tr-none' 
                         : msg.isError 
                           ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
-                          : 'bg-muted rounded-tl-none'
+                          : 'bg-white rounded-tl-none border border-border'
                     }`}>
                       {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
                       <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
@@ -213,7 +217,7 @@ export default function AssistantPage() {
                     <div className="h-8 w-8 rounded-full bg-accent/20 shrink-0 flex items-center justify-center animate-pulse">
                       <Bot className="w-4 h-4 text-accent-foreground" />
                     </div>
-                    <div className="bg-muted p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
+                    <div className="bg-white p-4 rounded-2xl rounded-tl-none flex items-center gap-2 border border-border">
                       <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></span>
                       <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.2s]"></span>
                       <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.4s]"></span>
@@ -221,7 +225,7 @@ export default function AssistantPage() {
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} className="h-1" />
+              <div ref={messagesEndRef} className="h-4" />
             </div>
           </ScrollArea>
         </CardContent>
