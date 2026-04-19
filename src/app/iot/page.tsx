@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -6,30 +5,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { 
   Cpu, 
-  Plus, 
   Activity, 
   Droplets, 
   ThermometerSun, 
   Settings2, 
   CheckCircle2, 
-  Zap,
   Signal,
   Wifi,
   ChevronRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ConnectDeviceDialog } from '@/components/iot/connect-device-dialog';
 
 export default function IoTHubPage() {
   return (
-    <div className="max-w-6xl mx-auto space-y-10 p-4 md:p-8 pb-24">
+    <div className="max-w-6xl mx-auto space-y-10 p-4 md:p-8 pb-24 text-slate-900">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">IoT Hub</h1>
+          <h1 className="text-4xl font-bold font-headline tracking-tight">IoT Hub</h1>
           <p className="text-muted-foreground text-lg mt-1">Manage your smart sensors and automated hardware.</p>
         </div>
-        <Button className="rounded-xl h-12 px-6 flex items-center gap-2 shadow-lg bg-primary hover:bg-primary/90">
-          <Plus className="w-5 h-5" /> Connect New Device
-        </Button>
+        <ConnectDeviceDialog />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -37,7 +33,7 @@ export default function IoTHubPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center gap-2 px-2">
             <Activity className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold font-headline text-slate-800">Active Streams</h2>
+            <h2 className="text-xl font-bold font-headline">Active Streams</h2>
           </div>
           <p className="text-sm text-muted-foreground px-2 -mt-4 mb-4">Live telemetry from your fields.</p>
 
@@ -50,7 +46,7 @@ export default function IoTHubPage() {
                     <Droplets className="w-6 h-6 text-primary" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-slate-800">Soil Sensor Node A1</h3>
+                    <h3 className="font-bold text-lg">Soil Sensor Node A1</h3>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] font-bold uppercase px-2 py-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse" />
@@ -74,7 +70,7 @@ export default function IoTHubPage() {
                     <ThermometerSun className="w-6 h-6 text-orange-500" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-slate-800">Weather Station Pro</h3>
+                    <h3 className="font-bold text-lg">Weather Station Pro</h3>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] font-bold uppercase px-2 py-0">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse" />
@@ -104,7 +100,7 @@ export default function IoTHubPage() {
               <div className="space-y-1">
                 <div className="flex gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm font-bold text-slate-800">Real-time Moisture</p>
+                  <p className="text-sm font-bold">Real-time Moisture</p>
                 </div>
                 <p className="text-sm text-muted-foreground ml-8 leading-relaxed">
                   Automated irrigation based on ground-truth sensor data.
@@ -114,7 +110,7 @@ export default function IoTHubPage() {
               <div className="space-y-1">
                 <div className="flex gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm font-bold text-slate-800">Precise pH</p>
+                  <p className="text-sm font-bold">Precise pH</p>
                 </div>
                 <p className="text-sm text-muted-foreground ml-8 leading-relaxed">
                   Eliminates manual testing errors with continuous soil chemistry monitoring.
@@ -124,7 +120,7 @@ export default function IoTHubPage() {
               <div className="space-y-1">
                 <div className="flex gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm font-bold text-slate-800">Frost Alerts</p>
+                  <p className="text-sm font-bold">Frost Alerts</p>
                 </div>
                 <p className="text-sm text-muted-foreground ml-8 leading-relaxed">
                   Get instant phone notifications when temperature drops below critical levels.
@@ -149,7 +145,7 @@ export default function IoTHubPage() {
             <Cpu className="w-10 h-10 text-primary" />
           </div>
           <div className="space-y-2 max-w-2xl">
-            <h2 className="text-3xl font-bold font-headline text-slate-900">Build Your Own Node</h2>
+            <h2 className="text-3xl font-bold font-headline">Build Your Own Node</h2>
             <p className="text-muted-foreground text-lg">
               AgriGrow AI is open-source compatible. Use ESP32 or Arduino nodes to feed custom sensor data into our predictive models.
             </p>
