@@ -14,15 +14,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon, Sprout, MapPin, Save, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFirestore, useUser, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AddNewFieldPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  // Hooks for Firebase services and user session
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   
@@ -37,7 +36,6 @@ export default function AddNewFieldPage() {
   const [area, setArea] = useState('2');
   const [sowingDate, setSowingDate] = useState<Date | undefined>(undefined);
 
-  // Redirect if definitely not logged in after loading finishes
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -47,7 +45,6 @@ export default function AddNewFieldPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Safety check for user session and firestore availability
     if (!user || !firestore) {
       toast({ 
         variant: 'destructive', 
@@ -64,8 +61,11 @@ export default function AddNewFieldPage() {
 
     setIsSubmitting(true);
 
+    // Generate ID locally to ensure it matches the path in security rules
+    const fieldId = crypto.randomUUID();
+
     const fieldData = {
-      id: crypto.randomUUID(), // Local ID generation for consistency
+      id: fieldId,
       userId: user.uid,
       name: name.trim(),
       currentCropId: cropType,
@@ -79,8 +79,9 @@ export default function AddNewFieldPage() {
     };
 
     try {
-      const colRef = collection(firestore, 'users', user.uid, 'farmFields');
-      addDocumentNonBlocking(colRef, fieldData);
+      // Use setDocumentNonBlocking with the specific document path to satisfy security rules
+      const docRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
+      setDocumentNonBlocking(docRef, fieldData, { merge: true });
       
       toast({ title: 'Field Added', description: `${name} has been successfully registered.` });
       router.push('/fields');
@@ -91,7 +92,6 @@ export default function AddNewFieldPage() {
     }
   };
 
-  // Show loading state while auth session is initializing
   if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -100,7 +100,6 @@ export default function AddNewFieldPage() {
     );
   }
 
-  // Prevent rendering if not authenticated
   if (!user) return null;
 
   return (

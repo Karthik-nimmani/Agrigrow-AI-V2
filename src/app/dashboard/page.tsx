@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -15,7 +16,8 @@ import {
   Wind,
   RefreshCw,
   Sparkles,
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -47,25 +49,22 @@ export default function Dashboard() {
     }));
   }, []);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  // Sync fields for stats calculation
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
   }, [firestore, user]);
 
-  const { data: fields } = useCollection(fieldsQuery);
+  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
 
   const totalArea = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
-  // Use a heuristic for potential yield if not explicitly in schema
   const potentialYield = totalArea * 2500; 
-  const alertCount = 0; // Simplified for MVP
+  const alertCount = 0; 
 
   const fetchWeatherIntelligence = async () => {
     if (!user) return;
@@ -107,7 +106,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 p-4 md:p-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline mb-2">Farm Overview</h1>
@@ -119,7 +117,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Meteorological Intelligence Card */}
       <Card className="border-none shadow-md bg-white overflow-hidden">
         <CardHeader className="bg-primary/5 border-b flex flex-row items-center justify-between py-4">
           <div className="flex items-center gap-2">
@@ -201,7 +198,6 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-none shadow-sm bg-primary text-white overflow-hidden group hover:scale-[1.02] transition-transform">
           <CardContent className="p-8">
@@ -247,7 +243,52 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Floating Action Buttons */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold font-headline">My Fields</h2>
+          <Link href="/fields">
+            <Button variant="ghost" className="text-primary flex items-center gap-2">
+              View All <ChevronRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isFieldsLoading ? (
+            Array(3).fill(0).map((_, i) => (
+              <Card key={i} className="animate-pulse bg-muted/20 border-none h-24" />
+            ))
+          ) : fields?.length === 0 ? (
+            <Card className="col-span-full border-none bg-muted/10 p-12 text-center">
+              <Sprout className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <h3 className="text-lg font-bold">No Fields Registered</h3>
+              <p className="text-muted-foreground mb-4">Add your first acreage to start tracking.</p>
+              <Link href="/fields/new">
+                <Button>Register Field</Button>
+              </Link>
+            </Card>
+          ) : (
+            fields?.slice(0, 3).map((field) => (
+              <Link key={field.id} href={`/fields/${field.id}`}>
+                <Card className="border-none shadow-sm hover:shadow-md transition-all group h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-bold text-lg group-hover:text-primary transition-colors">{field.name}</h4>
+                        <p className="text-sm text-muted-foreground">{field.area} {field.unitOfArea}</p>
+                        <p className="text-xs font-bold text-primary uppercase">{field.currentCropId}</p>
+                      </div>
+                      <div className="p-2 bg-primary/5 rounded-lg">
+                        <Sprout className="w-5 h-5 text-primary" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
+
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
         <Link href="/assistant">
           <Button size="icon" className="w-12 h-12 rounded-full bg-white shadow-lg text-primary hover:bg-muted border border-muted hover:scale-110 transition-transform">
