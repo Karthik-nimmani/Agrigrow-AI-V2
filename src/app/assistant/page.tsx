@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -11,7 +12,6 @@ import {
   Globe, 
   User, 
   Bot,
-  RefreshCw,
   Sparkles,
   Trash2,
   AlertTriangle
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, limit, doc, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function AssistantPage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('English');
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -49,10 +50,12 @@ export default function AssistantPage() {
 
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages, isBotThinking]);
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -97,16 +100,12 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err: any) {
-      // Handle Specific GenAI Errors (Quota, Connection, etc.)
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
-      const isConfigError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
       
       let errorMessage = "I'm having trouble connecting to my knowledge base. Please check your network or try again in a few minutes.";
       
       if (isQuotaError) {
         errorMessage = "I've reached my daily limit for free agricultural advice (30 requests/day). Please try again tomorrow!";
-      } else if (isConfigError) {
-        errorMessage = "I'm undergoing some configuration maintenance. My team is aware and fixing me right now!";
       }
 
       const errorMsgId = crypto.randomUUID();
@@ -144,9 +143,9 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-120px)] flex flex-col gap-4 p-4">
-      <Card className="flex-1 flex flex-col border-none shadow-lg bg-white overflow-hidden rounded-3xl">
-        <CardHeader className="bg-primary/5 border-b py-4 flex flex-row items-center justify-between">
+    <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] md:h-[calc(100vh-100px)] flex flex-col p-4 overflow-hidden">
+      <Card className="flex-1 flex flex-col border-none shadow-xl bg-white overflow-hidden rounded-3xl">
+        <CardHeader className="bg-primary/5 border-b py-4 flex flex-row items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-full">
               <Bot className="w-5 h-5 text-primary" />
@@ -178,60 +177,62 @@ export default function AssistantPage() {
           </div>
         </CardHeader>
         
-        <CardContent 
-          ref={scrollRef} 
-          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth"
-        >
-          {(!messages || messages.length === 0) && !isBotThinking && (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40 py-20">
-              <MessageSquare className="w-12 h-12" />
-              <p className="text-sm font-medium max-w-xs">Ask Agri-Bot about soil health, weather risks, or crop optimization.</p>
-            </div>
-          )}
+        <CardContent className="flex-1 p-0 overflow-hidden relative">
+          <ScrollArea className="h-full px-4 md:px-6">
+            <div className="py-6 space-y-6">
+              {(!messages || messages.length === 0) && !isBotThinking && (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40 py-20">
+                  <MessageSquare className="w-12 h-12" />
+                  <p className="text-sm font-medium max-w-xs">Ask Agri-Bot about soil health, weather risks, or crop optimization.</p>
+                </div>
+              )}
 
-          {messages?.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-              <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.senderType === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-1 ${msg.senderType === 'user' ? 'bg-primary/10' : 'bg-accent/20'}`}>
-                  {msg.senderType === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-accent-foreground" />}
+              {messages?.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.senderType === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-1 ${msg.senderType === 'user' ? 'bg-primary/10' : 'bg-accent/20'}`}>
+                      {msg.senderType === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-accent-foreground" />}
+                    </div>
+                    <div className={`p-4 rounded-2xl shadow-sm ${
+                      msg.senderType === 'user' 
+                        ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                        : msg.isError 
+                          ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
+                          : 'bg-muted rounded-tl-none'
+                    }`}>
+                      {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
+                      <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className={`p-4 rounded-2xl shadow-sm ${
-                  msg.senderType === 'user' 
-                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                    : msg.isError 
-                      ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
-                      : 'bg-muted rounded-tl-none'
-                }`}>
-                  {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
-                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+              ))}
 
-          {isBotThinking && (
-            <div className="flex justify-start">
-              <div className="flex gap-3 max-w-[85%] md:max-w-[70%]">
-                <div className="h-8 w-8 rounded-full bg-accent/20 shrink-0 flex items-center justify-center animate-pulse">
-                  <Bot className="w-4 h-4 text-accent-foreground" />
+              {isBotThinking && (
+                <div className="flex justify-start">
+                  <div className="flex gap-3 max-w-[85%] md:max-w-[70%]">
+                    <div className="h-8 w-8 rounded-full bg-accent/20 shrink-0 flex items-center justify-center animate-pulse">
+                      <Bot className="w-4 h-4 text-accent-foreground" />
+                    </div>
+                    <div className="bg-muted p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></span>
+                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-muted p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></span>
-                  <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                </div>
-              </div>
+              )}
+              <div ref={messagesEndRef} className="h-1" />
             </div>
-          )}
+          </ScrollArea>
         </CardContent>
 
-        <div className="p-4 border-t bg-white">
+        <div className="p-4 border-t bg-white shrink-0">
           <form onSubmit={handleSend} className="flex gap-2">
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about fertilizer, weather, or crop care..." 
-              className="h-12 rounded-full px-6 bg-muted/30 border-none focus-visible:ring-primary"
+              className="h-12 rounded-full px-6 bg-muted/30 border-none focus-visible:ring-primary shadow-inner"
             />
             <Button type="submit" disabled={isBotThinking || !input.trim()} size="icon" className="h-12 w-12 rounded-full shrink-0 shadow-lg shadow-primary/20">
               <Send className="w-5 h-5" />
