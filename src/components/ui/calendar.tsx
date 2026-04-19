@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -21,69 +21,69 @@ function Calendar({
   ...props
 }: CalendarProps) {
   return (
-    <div className={cn("p-3 bg-white rounded-lg shadow-sm border", className)}>
+    <div className={cn("p-4 bg-white rounded-xl shadow-lg border border-border", className)}>
       <DayPicker
         showOutsideDays={showOutsideDays}
         className="w-full"
         classNames={{
-          months: "flex flex-col space-y-4",
+          months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
           month: "space-y-4",
-          caption: "flex justify-between pt-1 relative items-center px-2 mb-4",
-          caption_label: "text-sm font-bold flex items-center gap-1 cursor-default",
-          nav: "flex items-center gap-1",
+          caption: "flex justify-center pt-1 relative items-center mb-2",
+          caption_label: "text-sm font-bold",
+          nav: "space-x-1 flex items-center",
           nav_button: cn(
-            buttonVariants({ variant: "ghost" }),
-            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 transition-opacity"
+            buttonVariants({ variant: "outline" }),
+            "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
           ),
-          nav_button_previous: "",
-          nav_button_next: "",
-          table: "w-full border-collapse",
-          head_row: "flex w-full mb-2",
-          head_cell: "text-muted-foreground w-9 font-medium text-[0.8rem] flex-1 text-center",
-          row: "flex w-full mt-1",
-          cell: cn(
-            "relative h-9 w-9 text-center text-sm p-0 flex-1 flex items-center justify-center",
-            "[&:has([aria-selected])]:bg-transparent"
-          ),
+          nav_button_previous: "absolute left-1",
+          nav_button_next: "absolute right-1",
+          table: "w-full border-collapse space-y-1",
+          head_row: "flex",
+          head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] uppercase",
+          row: "flex w-full mt-2",
+          cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
           day: cn(
             buttonVariants({ variant: "ghost" }),
-            "h-8 w-8 p-0 font-normal aria-selected:opacity-100 hover:bg-muted rounded-md transition-all"
+            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-primary/10 transition-all rounded-lg"
           ),
           day_range_end: "day-range-end",
           day_selected:
-            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-bold shadow-sm",
-          day_today: "text-primary font-bold border border-primary/30 bg-primary/5",
-          day_outside: "text-muted-foreground/30 opacity-50",
+            "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground font-bold",
+          day_today: "bg-accent text-accent-foreground font-bold border border-primary/20",
+          day_outside:
+            "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
           day_disabled: "text-muted-foreground opacity-50",
-          day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+          day_range_middle:
+            "aria-selected:bg-accent aria-selected:text-accent-foreground",
           day_hidden: "invisible",
           ...classNames,
         }}
         components={{
-          IconLeft: ({ ...props }) => <ChevronUp className="h-4 w-4" />,
-          IconRight: ({ ...props }) => <ChevronDown className="h-4 w-4" />,
+          IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+          IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
         }}
         {...props}
       />
-      
-      <div className="flex items-center justify-between mt-4 pt-3 border-t px-2">
-        <button 
+      <div className="flex items-center justify-between mt-4 pt-4 border-t border-border px-1">
+        <button
+          type="button"
           onClick={(e) => {
             e.preventDefault();
             onClear?.();
           }}
-          className="text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+          className="text-xs font-bold uppercase tracking-widest text-primary hover:underline transition-all"
         >
-          Clear
+          Clear Selection
         </button>
-        <button 
+        <button
+          type="button"
           onClick={(e) => {
             e.preventDefault();
             onToday?.();
           }}
-          className="text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors"
+          className="text-xs font-bold uppercase tracking-widest text-primary hover:underline transition-all"
         >
-          Today
+          Go to Today
         </button>
       </div>
     </div>
