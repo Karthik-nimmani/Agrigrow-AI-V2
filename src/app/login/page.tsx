@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sprout, Phone, Mail, Loader2, LogIn } from 'lucide-react';
+import { Sprout, Phone, Loader2, LogIn } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn, setDocumentNonBlocking } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
+import { doc, getFirestore } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [step, setStep] = useState<'method' | 'phone' | 'otp'>('method');
   const [isLoading, setIsLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
   const router = useRouter();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -20,34 +21,41 @@ export default function LoginPage() {
   // Redirect if already logged in and ensure user profile exists
   useEffect(() => {
     if (user && !isUserLoading) {
-      // Create user profile in Firestore if it doesn't exist
       const db = getFirestore();
       const userRef = doc(db, 'users', user.uid);
       
-      // Basic profile sync
-      setDocumentNonBlocking(userRef, {
+      const profileData: any = {
         id: user.uid,
         displayName: user.displayName || 'Farmer',
         email: user.email || '',
         preferredLanguage: 'English',
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }, { merge: true });
+      };
 
+      // If we have a phone number from the login flow, save it
+      if (phoneNumber) {
+        profileData.phone = phoneNumber;
+      }
+
+      setDocumentNonBlocking(userRef, profileData, { merge: true });
       router.push('/dashboard');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, phoneNumber]);
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phoneNumber) return;
     setIsLoading(true);
-    // Standard phone auth would go here, fallback to anonymous for proto
-    initiateAnonymousSignIn(auth);
+    // In a production app, we would use signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+    // For this implementation, we proceed to OTP simulation or direct sign-in
+    setStep('otp');
+    setIsLoading(false);
   };
 
   const handleOtpSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Complete the sign in
     initiateAnonymousSignIn(auth);
   };
 
@@ -106,7 +114,7 @@ export default function LoginPage() {
                     />
                     <path
                       fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
                 )}
@@ -153,6 +161,8 @@ export default function LoginPage() {
                     required 
                     type="tel" 
                     placeholder="9998887776" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     className="h-14 rounded-l-none rounded-r-2xl border-slate-200 text-lg focus-visible:ring-primary" 
                     autoFocus
                   />
@@ -164,6 +174,31 @@ export default function LoginPage() {
               </Button>
               <Button variant="ghost" onClick={() => setStep('method')} className="w-full text-slate-500 hover:text-primary">
                 Back to Methods
+              </Button>
+            </form>
+          )}
+
+          {step === 'otp' && (
+            <form onSubmit={handleOtpSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Enter 6-Digit OTP</label>
+                <Input 
+                  required 
+                  type="text" 
+                  maxLength={6}
+                  placeholder="123456" 
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="h-14 rounded-2xl border-slate-200 text-center text-2xl tracking-[1em] focus-visible:ring-primary" 
+                  autoFocus
+                />
+              </div>
+              <Button disabled={isLoading} className="w-full h-14 text-lg rounded-2xl font-bold shadow-lg">
+                {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                Verify & Login
+              </Button>
+              <Button variant="ghost" onClick={() => setStep('phone')} className="w-full text-slate-500 hover:text-primary">
+                Change Number
               </Button>
             </form>
           )}
