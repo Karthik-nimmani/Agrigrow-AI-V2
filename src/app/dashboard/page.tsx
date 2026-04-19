@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -279,18 +278,13 @@ export default function Dashboard() {
             fields?.slice(0, 4).map((field) => (
               <Link key={field.id} href={`/fields/${field.id}`}>
                 <Card className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-white rounded-2xl flex border border-slate-50 relative">
-                  {/* Status Indicator Dot */}
                   <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-destructive" />
-                  
-                  {/* Left Sidebar Icon Area */}
                   <div className="w-24 bg-secondary/30 flex flex-col items-center justify-center gap-2 shrink-0 group-hover:bg-secondary/50 transition-colors py-8">
                     <Sprout className="w-8 h-8 text-primary" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">
                       {field.currentCropId || 'Maize'}
                     </span>
                   </div>
-
-                  {/* Main Content Area */}
                   <div className="flex-1 flex flex-col justify-between p-6">
                     <div className="space-y-4">
                       <div className="space-y-1">
@@ -301,7 +295,6 @@ export default function Dashboard() {
                           <MapPin className="w-3 h-3" /> {field.locationDescription || 'Local Region'}
                         </p>
                       </div>
-
                       <div className="flex items-center gap-4 text-xs font-bold text-slate-600">
                         <span className="flex items-center gap-1">
                           {field.area} <span className="text-muted-foreground font-normal">Acres</span>
@@ -312,7 +305,6 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-
                     <div className="mt-6 pt-4 border-t flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">STATUS</span>
                       <span className="text-xs font-bold text-destructive">Analysis Required</span>
