@@ -13,7 +13,8 @@ import {
   Sprout,
   Trash2,
   Loader2,
-  MapPin
+  MapPin,
+  Edit3
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -31,6 +32,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { EditFieldDialog } from '@/components/fields/edit-field-dialog';
 
 export default function FieldsPage() {
   const router = useRouter();
@@ -154,31 +156,38 @@ export default function FieldsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="w-20 flex flex-col items-center justify-between py-6 border-l border-slate-50 bg-slate-50/30">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
-                        <Trash2 className="w-5 h-5" />
+                <div className="w-32 flex flex-col items-center justify-center gap-2 py-6 border-l border-slate-50 bg-slate-50/30 px-2">
+                  <div className="flex items-center gap-2">
+                    <EditFieldDialog field={field} trigger={
+                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary transition-colors h-10 w-10">
+                        <Edit3 className="w-5 h-5" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-2xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Field Record?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete "{field.name}" and all historical data. This action is irreversible.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(field.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
-                          Delete Permanently
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <Link href={`/fields/${field.id}`}>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all">
-                      <ChevronRight className="w-6 h-6" />
+                    } />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors h-10 w-10">
+                          <Trash2 className="w-5 h-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove Field Record?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete "{field.name}" and all historical data. This action is irreversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(field.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">
+                            Delete Permanently
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  <Link href={`/fields/${field.id}`} className="w-full">
+                    <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest text-primary flex items-center justify-center gap-1">
+                      Details <ChevronRight className="w-3 h-3" />
                     </Button>
                   </Link>
                 </div>

@@ -12,7 +12,8 @@ import {
   Loader2, 
   ChevronRight,
   Info,
-  AlertTriangle
+  AlertTriangle,
+  Edit3
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,6 +22,7 @@ import { aiActionableCropRecommendations, type AiActionableCropRecommendationsOu
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { EditFieldDialog } from '@/components/fields/edit-field-dialog';
 
 export default function FieldDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -122,9 +124,11 @@ export default function FieldDetailPage({ params }: { params: Promise<{ id: stri
                   <CardTitle className="text-lg">Field Summary</CardTitle>
                   <CardDescription>Current agronomic metrics</CardDescription>
                 </div>
-                <Link href={`/fields`}>
-                   <Button variant="outline" size="sm">Manage Field</Button>
-                </Link>
+                <EditFieldDialog field={field} trigger={
+                  <Button variant="outline" size="sm" className="rounded-xl flex items-center gap-2">
+                    <Edit3 className="w-4 h-4" /> Edit Field
+                  </Button>
+                } />
               </div>
             </CardHeader>
             <CardContent className="p-6">
