@@ -76,7 +76,14 @@ export default function LoginPage() {
 
   const handleEmailSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !displayName) return;
+    if (!email || !password || !displayName) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in all fields to create an account."
+      });
+      return;
+    }
     setIsLoading(true);
     initiateEmailSignUp(auth, email, password);
   };
