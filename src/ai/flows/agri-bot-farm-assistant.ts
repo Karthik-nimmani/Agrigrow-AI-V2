@@ -33,9 +33,15 @@ export async function agriBotFarmAssistant(
 
 const prompt = ai.definePrompt({
   name: 'agriBotPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: AgriBotInputSchema},
   output: {schema: AgriBotOutputSchema},
-  prompt: `You are Agri-Bot, an expert multi-language AI agricultural assistant designed to provide real-time, relevant, and actionable advice to farmers.\nYour goal is to help farmers quickly resolve their queries and learn best practices for their farm.\nAlways be helpful, clear, and concise.\n\nThe farmer's question is: {{{question}}}\nPlease provide the answer in {{{language}}}.`,
+  prompt: `You are Agri-Bot, an expert multi-language AI agricultural assistant designed to provide real-time, relevant, and actionable advice to farmers.
+Your goal is to help farmers quickly resolve their queries and learn best practices for their farm.
+Always be helpful, clear, and concise.
+
+The farmer's question is: {{{question}}}
+Please provide the answer in {{{language}}}.`,
 });
 
 const agriBotFarmAssistantFlow = ai.defineFlow(
@@ -46,6 +52,9 @@ const agriBotFarmAssistantFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('Failed to generate response from Agri-Bot.');
+    }
+    return output;
   }
 );

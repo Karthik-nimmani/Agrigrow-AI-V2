@@ -15,18 +15,18 @@ const YieldForecastInputSchema = z.object({
   fieldArea: z.number().describe('The area of the field in a specified unit (e.g., acres, hectares).'),
   fieldAreaUnit: z.string().describe('The unit of measurement for the field area (e.g., "acres", "hectares").'),
   soilpH: z.number().describe('The pH level of the soil.'),
-  yieldHistory: z.string().describe('A summary of past yield data for the field (e.g., "Last year: 100 bushels/acre, year before: 95 bushels/acre").'),
-  recentRainfall: z.string().describe('Information about recent rainfall (e.g., "5 inches in the last month").'),
-  fertilizerApplied: z.string().describe('Details about fertilizer application (e.g., "100kg NPK per acre two weeks ago").'),
-  temperatureHistory: z.string().describe('A summary of recent temperature conditions (e.g., "Average 25C, recent heatwave 35C for 3 days").'),
-  humidityHistory: z.string().describe('A summary of recent humidity conditions (e.g., "Average 70%, recent dry spell 40%").'),
-  pestsDiseasesObserved: z.string().describe('Details on any observed pests or diseases (e.g., "Minor aphid infestation, treated last week").'),
+  yieldHistory: z.string().describe('A summary of past yield data for the field.'),
+  recentRainfall: z.string().describe('Information about recent rainfall.'),
+  fertilizerApplied: z.string().describe('Details about fertilizer application.'),
+  temperatureHistory: z.string().describe('A summary of recent temperature conditions.'),
+  humidityHistory: z.string().describe('A summary of recent humidity conditions.'),
+  pestsDiseasesObserved: z.string().describe('Details on any observed pests or diseases.'),
 });
 export type YieldForecastInput = z.infer<typeof YieldForecastInputSchema>;
 
 const YieldForecastOutputSchema = z.object({
   predictedYieldValue: z.number().describe('The forecasted yield value.'),
-  predictedYieldUnit: z.string().describe('The unit for the predicted yield (e.g., "bushels/acre", "kg/hectare").'),
+  predictedYieldUnit: z.string().describe('The unit for the predicted yield.'),
   explanation: z
     .string()
     .describe('A clear, detailed explanation of the key factors influencing the prediction.'),
@@ -41,6 +41,7 @@ export async function aiYieldForecastWithExplanation(
 
 const yieldForecastPrompt = ai.definePrompt({
   name: 'yieldForecastPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: YieldForecastInputSchema},
   output: {schema: YieldForecastOutputSchema},
   prompt: `You are an expert agricultural AI assistant specialized in crop yield prediction and analysis. Your task is to provide a yield forecast for a farmer's field and explain the key factors influencing your prediction.
@@ -57,7 +58,7 @@ Temperature History: {{{temperatureHistory}}}
 Humidity History: {{{humidityHistory}}}
 Pests/Diseases Observed: {{{pestsDiseasesObserved}}}
 
-Consider all provided data points to make an accurate prediction. The explanation should be clear, concise, and highlight which factors had the most significant impact (positive or negative) on the forecast. Focus on environmental, agronomic, and historical data points.`,
+Consider all provided data points to make an accurate prediction. The explanation should be clear, concise, and highlight which factors had the most significant impact (positive or negative) on the forecast.`,
 });
 
 const yieldForecastFlow = ai.defineFlow(

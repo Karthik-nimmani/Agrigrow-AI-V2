@@ -42,6 +42,7 @@ export async function aiDiseaseDetectionAndTreatmentPlan(
 
 const identifyDiseasePrompt = ai.definePrompt({
   name: 'identifyDiseasePrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: CropPhotoInputSchema},
   output: {schema: DiseaseDetectionOutputSchema},
   prompt: `You are an expert agricultural botanist specializing in crop disease and pest identification.
@@ -61,6 +62,7 @@ const aiDiseaseDetectionAndTreatmentPlanFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await identifyDiseasePrompt(input);
-    return output!;
+    if (!output) throw new Error('Disease detection failed');
+    return output;
   }
 );
