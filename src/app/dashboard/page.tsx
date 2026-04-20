@@ -68,6 +68,14 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  // Define fields first to avoid ReferenceError in callbacks
+  const fieldsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'users', user.uid, 'farmFields');
+  }, [firestore, user]);
+
+  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
+
   const fetchWeatherIntelligence = useCallback(async (lat?: number, lon?: number) => {
     if (!user) return;
     setIsRefreshing(true);
@@ -158,13 +166,6 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
-
-  const fieldsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, 'users', user.uid, 'farmFields');
-  }, [firestore, user]);
-
-  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
 
   const totalArea = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
   const potentialYield = totalArea * 2500; 

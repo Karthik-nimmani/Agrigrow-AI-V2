@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -69,7 +70,6 @@ export default function AssistantPage() {
 
     const timestamp = new Date().toISOString();
 
-    // 1. Save User Message
     const userMsgId = crypto.randomUUID();
     const userMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', userMsgId);
     setDocumentNonBlocking(userMsgRef, {
@@ -82,13 +82,11 @@ export default function AssistantPage() {
     }, { merge: true });
 
     try {
-      // 2. Call AI Bot
       const response = await agriBotFarmAssistant({
         question: userMessage,
         language: language
       });
 
-      // 3. Save Bot Response
       const botMsgId = crypto.randomUUID();
       const botMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', botMsgId);
       setDocumentNonBlocking(botMsgRef, {
@@ -101,7 +99,7 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err: any) {
-      // Improved error detection
+      // Improved error detection for quota vs system errors
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
       const isConfigError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
       
