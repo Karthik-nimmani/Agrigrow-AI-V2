@@ -59,7 +59,7 @@ export default function Dashboard() {
   const [weatherData, setWeatherData] = useState({
     temp: 0,
     humidity: 0,
-    soilMoisture: 45, // Soil moisture usually requires local hardware; maintaining a healthy baseline
+    soilMoisture: 45,
     location: "Detecting location...",
     lastUpdated: ""
   });
@@ -76,9 +76,8 @@ export default function Dashboard() {
       let currentLat = lat;
       let currentLon = lon;
 
-      // If coordinates aren't provided, try to get them
       if (!currentLat || !currentLon) {
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               currentLat = pos.coords.latitude;
@@ -86,13 +85,12 @@ export default function Dashboard() {
               resolve(true);
             },
             () => {
-              // Fallback to a central location if denied, but usually we want to notify
               toast({
                 title: "Location Access Denied",
-                description: "Using default regional weather. Please enable location for local accuracy.",
+                description: "Using regional default. Enable location for precision.",
                 variant: "destructive"
               });
-              currentLat = 30.9010; // Punjab area fallback
+              currentLat = 30.9010;
               currentLon = 75.8573;
               resolve(true);
             }
@@ -100,13 +98,11 @@ export default function Dashboard() {
         });
       }
 
-      // 1. Fetch Real Weather Data from Open-Meteo (Free, no key required)
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
       const weatherJson = await weatherRes.json();
       
-      // 2. Fetch Location Name from Nominatim (OpenStreetMap)
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`
       );
@@ -120,12 +116,11 @@ export default function Dashboard() {
       setWeatherData({
         temp: updatedTemp,
         humidity: updatedHumidity,
-        soilMoisture: 40 + Math.floor(Math.random() * 10), // Baseline sensor approximation
+        soilMoisture: 40 + Math.floor(Math.random() * 10),
         location: locationName,
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      // 3. Get AI Analysis for the REAL data
       const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",
@@ -139,17 +134,17 @@ export default function Dashboard() {
       });
       setWeatherAdvice(res);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Weather Sync Error:", err);
       toast({
         variant: "destructive",
-        title: "Sync Failed",
-        description: "Could not retrieve live meteorological data. Check your connection."
+        title: "Sync Error",
+        description: err.message || "Failed to retrieve live data."
       });
     } finally {
       setIsRefreshing(false);
     }
-  }, [user, toast]);
+  }, [user, toast, fields]);
 
   useEffect(() => {
     setMounted(true);
@@ -432,7 +427,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
         <Link href="/assistant">
           <Button size="icon" className="w-14 h-14 rounded-full bg-white shadow-xl text-primary border border-primary/10 hover:bg-primary/5 hover:scale-110 transition-transform">
