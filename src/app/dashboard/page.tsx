@@ -68,7 +68,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Define fields first to avoid ReferenceError in callbacks
+  // Initialize data queries first to avoid ReferenceError in callbacks
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -106,11 +106,13 @@ export default function Dashboard() {
         });
       }
 
+      // Fetch LIVE weather data from Open-Meteo
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
       const weatherJson = await weatherRes.json();
       
+      // Fetch location name from OpenStreetMap
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`
       );
@@ -129,6 +131,7 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
+      // Fetch AI advice based on LIVE data
       const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",
