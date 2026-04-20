@@ -70,8 +70,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
+    // Initial dynamic seed
     setWeatherData(prev => ({
       ...prev,
+      temp: 22 + Math.floor(Math.random() * 6),
+      humidity: 55 + Math.floor(Math.random() * 15),
+      soilMoisture: 40 + Math.floor(Math.random() * 10),
       lastUpdated: new Date().toLocaleTimeString()
     }));
   }, []);
@@ -95,20 +99,33 @@ export default function Dashboard() {
   const fetchWeatherIntelligence = async () => {
     if (!user) return;
     setIsRefreshing(true);
+    
+    // Simulate real-time data update
+    const newTemp = 22 + Math.floor(Math.random() * 8);
+    const newHumidity = 50 + Math.floor(Math.random() * 20);
+    const newSoil = 35 + Math.floor(Math.random() * 20);
+    
+    setWeatherData(prev => ({
+      ...prev,
+      temp: newTemp,
+      humidity: newHumidity,
+      soilMoisture: newSoil,
+      lastUpdated: new Date().toLocaleTimeString()
+    }));
+
     try {
       const res = await aiWeatherBasedCropAdvice({
         location: weatherData.location,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat & Maize",
         currentConditions: {
-          temperature: weatherData.temp,
-          humidity: weatherData.humidity,
-          soilMoisture: weatherData.soilMoisture
+          temperature: newTemp,
+          humidity: newHumidity,
+          soilMoisture: newSoil
         },
         weatherForecast: "Partly cloudy with a slight drop in temperature overnight (approx 12°C). No rain expected.",
         cropGrowthStage: "Vegetative"
       });
       setWeatherAdvice(res);
-      setWeatherData(prev => ({ ...prev, lastUpdated: new Date().toLocaleTimeString() }));
     } catch (err) {
       // Error handled centrally
     } finally {
