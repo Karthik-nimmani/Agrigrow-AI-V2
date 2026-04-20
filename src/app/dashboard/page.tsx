@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Initialize data queries FIRST to prevent ReferenceError in fetchWeatherIntelligence
+  // CRITICAL: Initialize data queries FIRST to prevent ReferenceError in fetchWeatherIntelligence
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -326,7 +326,9 @@ export default function Dashboard() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Field?</AlertDialogTitle>
-                        <AlertDialogDescription>Are you sure you want to delete this field? This is irreversible.</AlertDialogDescription>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{field.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
