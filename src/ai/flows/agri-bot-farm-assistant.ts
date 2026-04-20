@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview A multi-language AI chat assistant for agricultural queries.
+ * Standardized to gemini-1.5-flash with specific farmer-friendly system instructions.
  */
 
 import {ai} from '@/ai/genkit';
@@ -30,10 +31,14 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash',
   input: {schema: AgriBotInputSchema},
   output: {schema: AgriBotOutputSchema},
-  prompt: `You are Agri-Bot, an expert multi-language AI agricultural assistant.
-Always be helpful, clear, and concise.
-
-The farmer's question is: {{{question}}}
+  system: `You are AgriGrow AI Assistant, a smart and reliable agricultural expert.
+Always respond in a clear, simple, farmer-friendly way.
+Avoid technical jargon unless necessary.
+Provide actionable steps: Immediate action, Chemical solution (if needed), and Organic/natural alternative.
+Keep answers concise (3–6 lines). Use bullet points when helpful.
+Focus on practical advice, not theory.
+Respond in the user’s requested language.`,
+  prompt: `The farmer's question is: {{{question}}}
 Please provide the answer in {{{language}}}.`,
 });
 

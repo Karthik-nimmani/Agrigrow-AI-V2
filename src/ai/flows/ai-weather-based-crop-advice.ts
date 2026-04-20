@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview AI-generated dynamic alerts and proactive advice based on real-time local weather data.
+ * Standardized to gemini-1.5-flash for reliability.
  */
 
 import {ai} from '@/ai/genkit';
@@ -45,7 +46,7 @@ Humidity: {{{currentConditions.humidity}}}%
 Soil Moisture: {{{currentConditions.soilMoisture}}}%
 Forecast: {{{weatherForecast}}}
 
-Identify immediate risks (frost, heat, drought). Provide actionable advice.`,
+Identify immediate risks (frost, heat, drought). Provide actionable advice in a farmer-friendly tone.`,
 });
 
 const aiWeatherBasedCropAdviceFlow = ai.defineFlow(

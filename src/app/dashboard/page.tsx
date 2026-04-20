@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // CRITICAL: Initialize data queries FIRST to prevent ReferenceError in fetchWeatherIntelligence
+  // Initialize queries at the top to avoid initialization errors
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -124,7 +124,7 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      // Fetch AI advice
+      // Fetch AI advice with stabilized model parameters
       const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",

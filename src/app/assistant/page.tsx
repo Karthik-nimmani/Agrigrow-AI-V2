@@ -32,7 +32,7 @@ export default function AssistantPage() {
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('English');
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -52,7 +52,12 @@ export default function AssistantPage() {
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
   };
 
   useEffect(() => {
@@ -99,7 +104,7 @@ export default function AssistantPage() {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
       const errorMessage = isQuotaError 
         ? "Daily request quota reached (30/day). Please try again tomorrow." 
-        : `AI Error: ${err.message || "Unknown error encountered."}`;
+        : `AI Error: ${err.message || "The AI system is temporarily unavailable. Standardizing connection..."}`;
 
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
@@ -137,8 +142,8 @@ export default function AssistantPage() {
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col p-4">
-      <Card className="flex-1 flex flex-col border-none shadow-xl bg-white overflow-hidden rounded-3xl">
-        <CardHeader className="bg-primary/5 border-b py-4 flex items-center justify-between shrink-0 flex-row">
+      <Card className="flex-1 flex flex-col border-none shadow-xl bg-white overflow-hidden rounded-[2rem]">
+        <CardHeader className="bg-primary/5 border-b py-4 flex items-center justify-between shrink-0 flex-row px-6">
           <div className="flex items-center gap-3">
              <Link href="/dashboard">
               <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
@@ -165,36 +170,42 @@ export default function AssistantPage() {
         </CardHeader>
         
         <CardContent className="flex-1 p-0 overflow-hidden relative bg-muted/5">
-          <ScrollArea className="h-full">
-            <div className="px-4 py-6 space-y-6">
+          <ScrollArea className="h-full" ref={scrollRef}>
+            <div className="px-6 py-6 space-y-6">
               {messages?.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`p-4 rounded-2xl max-w-[85%] ${
+                  <div className={`p-5 rounded-[1.5rem] max-w-[85%] shadow-sm ${
                     msg.senderType === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-white border'
+                      ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                      : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' : 'bg-white border rounded-tl-none'
                   }`}>
                     {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
                   </div>
                 </div>
               ))}
-              {isBotThinking && <Loader2 className="animate-spin text-primary" />}
-              <div ref={messagesEndRef} className="h-4" />
+              {isBotThinking && (
+                <div className="flex justify-start">
+                  <div className="bg-white border rounded-[1.5rem] rounded-tl-none p-5 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Bot is thinking...</span>
+                  </div>
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>
 
-        <div className="p-4 border-t bg-white shrink-0">
-          <form onSubmit={handleSend} className="flex gap-2">
+        <div className="p-6 border-t bg-white shrink-0">
+          <form onSubmit={handleSend} className="flex gap-3">
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask Agri-Bot..." 
-              className="h-12 rounded-full px-6 bg-muted/30 border-none"
+              placeholder="Ask Agri-Bot about crops, pests, or weather..." 
+              className="h-14 rounded-2xl px-6 bg-muted/30 border-none focus-visible:ring-primary text-base"
             />
-            <Button type="submit" disabled={isBotThinking || !input.trim()} size="icon" className="h-12 w-12 rounded-full">
-              <Send className="w-5 h-5" />
+            <Button type="submit" disabled={isBotThinking || !input.trim()} size="icon" className="h-14 w-14 rounded-2xl shadow-lg hover:scale-105 transition-transform">
+              <Send className="w-6 h-6" />
             </Button>
           </form>
         </div>
