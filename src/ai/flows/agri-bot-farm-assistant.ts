@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview A multi-language AI chat assistant for agricultural queries.
- *
- * - agriBotFarmAssistant - A function that handles real-time agricultural questions.
- * - AgriBotInput - The input type for the agriBotFarmAssistant function.
- * - AgriBotOutput - The return type for the agriBotFarmAssistant function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -18,16 +14,14 @@ const AgriBotInputSchema = z.object({
     .default('English')
     .describe('The desired language for the AI assistant\'s response. Defaults to English.'),
 });
-export type AgriBotInput = z.infer<typeof AgriBotInputSchema>;
 
 const AgriBotOutputSchema = z.object({
   answer: z.string().describe('The AI assistant\'s real-time agricultural advice.'),
 });
-export type AgriBotOutput = z.infer<typeof AgriBotOutputSchema>;
 
 export async function agriBotFarmAssistant(
-  input: AgriBotInput
-): Promise<AgriBotOutput> {
+  input: z.infer<typeof AgriBotInputSchema>
+): Promise<z.infer<typeof AgriBotOutputSchema>> {
   return agriBotFarmAssistantFlow(input);
 }
 
@@ -36,8 +30,7 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash',
   input: {schema: AgriBotInputSchema},
   output: {schema: AgriBotOutputSchema},
-  prompt: `You are Agri-Bot, an expert multi-language AI agricultural assistant designed to provide real-time, relevant, and actionable advice to farmers.
-Your goal is to help farmers quickly resolve their queries and learn best practices for their farm.
+  prompt: `You are Agri-Bot, an expert multi-language AI agricultural assistant.
 Always be helpful, clear, and concise.
 
 The farmer's question is: {{{question}}}

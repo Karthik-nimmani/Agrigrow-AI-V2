@@ -13,7 +13,8 @@ import {
   Bot,
   Sparkles,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeft
 } from 'lucide-react';
 import { agriBotFarmAssistant } from '@/ai/flows/agri-bot-farm-assistant';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +22,7 @@ import { useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBl
 import { collection, query, orderBy, limit, doc, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Link from 'next/link';
 
 export default function AssistantPage() {
   const router = useRouter();
@@ -50,9 +52,7 @@ export default function AssistantPage() {
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -67,14 +67,12 @@ export default function AssistantPage() {
     setInput('');
     setIsBotThinking(true);
 
-    const timestamp = new Date().toISOString();
-
     const userMsgId = crypto.randomUUID();
     const userMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', userMsgId);
     setDocumentNonBlocking(userMsgRef, {
       id: userMsgId,
       userId: user.uid,
-      timestamp,
+      timestamp: new Date().toISOString(),
       senderType: 'user',
       messageText: userMessage,
       language: language
@@ -98,17 +96,10 @@ export default function AssistantPage() {
       }, { merge: true });
 
     } catch (err: any) {
-      // Improved error detection for quota vs system errors
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
-      const isConfigError = err.message?.includes('404') || err.message?.toLowerCase().includes('not found');
-      
-      let errorMessage = `AI System Error: ${err.message || "Unknown error encountered."}`;
-      
-      if (isQuotaError) {
-        errorMessage = "Daily request quota reached (30/day). Please try again tomorrow.";
-      } else if (isConfigError) {
-        errorMessage = "AI Model Identification Error: The requested Gemini model configuration is temporarily unavailable. Standardizing to stable flash-1.5.";
-      }
+      const errorMessage = isQuotaError 
+        ? "Daily request quota reached (30/day). Please try again tomorrow." 
+        : `AI Error: ${err.message || "Unknown error encountered."}`;
 
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
@@ -145,35 +136,29 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col p-4 overflow-hidden">
+    <div className="max-w-4xl mx-auto h-[calc(100vh-140px)] flex flex-col p-4">
       <Card className="flex-1 flex flex-col border-none shadow-xl bg-white overflow-hidden rounded-3xl">
-        <CardHeader className="bg-primary/5 border-b py-4 flex flex-row items-center justify-between shrink-0">
+        <CardHeader className="bg-primary/5 border-b py-4 flex items-center justify-between shrink-0 flex-row">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <Bot className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-lg text-slate-900">Agri-Bot Assistant</CardTitle>
-              <CardDescription className="flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-primary" />
-                Real-time Farm Intelligence
-              </CardDescription>
-            </div>
+             <Link href="/dashboard">
+              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <CardTitle className="text-lg">Agri-Bot Assistant</CardTitle>
           </div>
           <div className="flex items-center gap-2">
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-32 h-9 border-none bg-white shadow-sm rounded-xl text-xs">
-                <Globe className="w-3 h-3 mr-2 text-muted-foreground" />
-                <SelectValue placeholder="Language" />
+              <SelectTrigger className="w-32 h-9 rounded-xl text-xs">
+                <Globe className="w-3 h-3 mr-2" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="English">English</SelectItem>
                 <SelectItem value="Hindi">हिन्दी</SelectItem>
-                <SelectItem value="Punjabi">ਪੰਜਾਬੀ</SelectItem>
-                <SelectItem value="Tamil">தமிழ்</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="ghost" size="icon" onClick={clearChat} className="h-9 w-9 rounded-full hover:bg-destructive/10 hover:text-destructive">
+            <Button variant="ghost" size="icon" onClick={clearChat} className="h-9 w-9 text-destructive">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -181,48 +166,20 @@ export default function AssistantPage() {
         
         <CardContent className="flex-1 p-0 overflow-hidden relative bg-muted/5">
           <ScrollArea className="h-full">
-            <div className="px-4 md:px-6 py-6 space-y-6">
-              {(!messages || messages.length === 0) && !isBotThinking && (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-40 py-20">
-                  <MessageSquare className="w-12 h-12" />
-                  <p className="text-sm font-medium max-w-xs">Ask Agri-Bot about soil health, weather risks, or crop optimization.</p>
-                </div>
-              )}
-
+            <div className="px-4 py-6 space-y-6">
               {messages?.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                  <div className={`flex gap-3 max-w-[85%] md:max-w-[70%] ${msg.senderType === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center mt-1 ${msg.senderType === 'user' ? 'bg-primary/10' : 'bg-accent/20'}`}>
-                      {msg.senderType === 'user' ? <User className="w-4 h-4 text-primary" /> : <Bot className="w-4 h-4 text-accent-foreground" />}
-                    </div>
-                    <div className={`p-4 rounded-2xl shadow-sm ${
-                      msg.senderType === 'user' 
-                        ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                        : msg.isError 
-                          ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-tl-none' 
-                          : 'bg-white rounded-tl-none border border-border text-slate-800'
-                    }`}>
-                      {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
-                      <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
-                    </div>
+                <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`p-4 rounded-2xl max-w-[85%] ${
+                    msg.senderType === 'user' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : msg.isError ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-white border'
+                  }`}>
+                    {msg.isError && <AlertTriangle className="w-4 h-4 mb-2" />}
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.messageText}</p>
                   </div>
                 </div>
               ))}
-
-              {isBotThinking && (
-                <div className="flex justify-start">
-                  <div className="flex gap-3 max-w-[85%] md:max-w-[70%]">
-                    <div className="h-8 w-8 rounded-full bg-accent/20 shrink-0 flex items-center justify-center animate-pulse">
-                      <Bot className="w-4 h-4 text-accent-foreground" />
-                    </div>
-                    <div className="bg-white p-4 rounded-2xl rounded-tl-none flex items-center gap-2 border border-border">
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce"></span>
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                      <span className="w-1.5 h-1.5 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0.4s]"></span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isBotThinking && <Loader2 className="animate-spin text-primary" />}
               <div ref={messagesEndRef} className="h-4" />
             </div>
           </ScrollArea>
@@ -233,16 +190,13 @@ export default function AssistantPage() {
             <Input 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about fertilizer, weather, or crop care..." 
-              className="h-12 rounded-full px-6 bg-muted/30 border-none focus-visible:ring-primary shadow-inner"
+              placeholder="Ask Agri-Bot..." 
+              className="h-12 rounded-full px-6 bg-muted/30 border-none"
             />
-            <Button type="submit" disabled={isBotThinking || !input.trim()} size="icon" className="h-12 w-12 rounded-full shrink-0 shadow-lg shadow-primary/20">
+            <Button type="submit" disabled={isBotThinking || !input.trim()} size="icon" className="h-12 w-12 rounded-full">
               <Send className="w-5 h-5" />
             </Button>
           </form>
-          <p className="text-center text-[10px] text-muted-foreground mt-2 px-4 uppercase tracking-widest font-bold">
-            Precision AI Advisor • Encrypted History
-          </p>
         </div>
       </Card>
     </div>
