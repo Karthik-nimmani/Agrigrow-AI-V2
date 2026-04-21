@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview This file implements a Genkit flow for generating actionable agricultural recommendations.
+ * @fileOverview Actionable crop recommendations using Gemini 2.5 Flash.
  */
 
 import {ai} from '@/ai/genkit';
@@ -27,18 +27,16 @@ export async function aiActionableCropRecommendations(input: AiActionableCropRec
 
 const aiActionableCropRecommendationsPrompt = ai.definePrompt({
   name: 'aiActionableCropRecommendationsPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash',
   input: {schema: AiActionableCropRecommendationsInputSchema},
   output: {schema: AiActionableCropRecommendationsOutputSchema},
-  prompt: `You are an expert agricultural advisor. Your task is to provide concise, actionable recommendations to a farmer to optimize their agricultural practices.
+  prompt: `You are an expert agricultural advisor. Provide 3 concise, practical, and quantifiable recommendations.
 
 Field Data:
 Crop Type: {{{cropType}}}
 Soil pH: {{{soilPH}}}
 Field Area: {{{areaAcres}}} acres
-Yield Forecast: {{{yieldForecast}}}
-
-Provide exactly 3 direct, practical, and quantifiable recommendations.`,
+Yield Forecast: {{{yieldForecast}}}`,
 });
 
 const aiActionableCropRecommendationsFlow = ai.defineFlow(

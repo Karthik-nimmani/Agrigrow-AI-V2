@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Initialize queries at the top to avoid ReferenceErrors in callbacks
+  // Initialize queries at the top
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -92,6 +92,7 @@ export default function Dashboard() {
               resolve(true);
             },
             () => {
+              // Fallback to Punjab coordinates
               currentLat = 30.9010;
               currentLon = 75.8573;
               resolve(true);
@@ -124,7 +125,7 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      // Fetch AI advice with stabilized model parameters
+      // Fetch AI advice with Gemini 2.5 Flash
       const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",

@@ -1,7 +1,6 @@
 'use server';
 /**
- * @fileOverview AI-generated dynamic alerts and proactive advice based on real-time local weather data.
- * Standardized to gemini-1.5-flash for reliability.
+ * @fileOverview Weather-based crop advice using Gemini 2.5 Flash.
  */
 
 import {ai} from '@/ai/genkit';
@@ -35,18 +34,16 @@ export async function aiWeatherBasedCropAdvice(
 
 const prompt = ai.definePrompt({
   name: 'aiWeatherBasedCropAdvicePrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash',
   input: {schema: AiWeatherBasedCropAdviceInputSchema},
   output: {schema: AiWeatherBasedCropAdviceOutputSchema},
-  prompt: `You are an expert agricultural advisor. Analyze local weather data.
+  prompt: `You are an expert agricultural advisor. Analyze weather risks.
 Location: {{{location}}}
 Crop: {{{cropType}}}
 Temp: {{{currentConditions.temperature}}}°C
 Humidity: {{{currentConditions.humidity}}}%
 Soil Moisture: {{{currentConditions.soilMoisture}}}%
-Forecast: {{{weatherForecast}}}
-
-Identify immediate risks (frost, heat, drought). Provide actionable advice in a farmer-friendly tone.`,
+Forecast: {{{weatherForecast}}}`,
 });
 
 const aiWeatherBasedCropAdviceFlow = ai.defineFlow(

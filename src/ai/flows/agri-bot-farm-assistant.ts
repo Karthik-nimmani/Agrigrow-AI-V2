@@ -1,7 +1,6 @@
 'use server';
 /**
- * @fileOverview A multi-language AI chat assistant for agricultural queries.
- * Standardized to gemini-1.5-flash with specific farmer-friendly system instructions.
+ * @fileOverview Expert AI agricultural assistant using Gemini 2.5 Flash.
  */
 
 import {ai} from '@/ai/genkit';
@@ -13,7 +12,7 @@ const AgriBotInputSchema = z.object({
     .string()
     .optional()
     .default('English')
-    .describe('The desired language for the AI assistant\'s response. Defaults to English.'),
+    .describe('The desired language for the AI assistant\'s response.'),
 });
 
 const AgriBotOutputSchema = z.object({
@@ -28,23 +27,38 @@ export async function agriBotFarmAssistant(
 
 const prompt = ai.definePrompt({
   name: 'agriBotPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.5-flash',
   input: {schema: AgriBotInputSchema},
   output: {schema: AgriBotOutputSchema},
-  system: `You are AgriGrow AI Assistant, a smart and reliable agricultural expert designed to help farmers with real-time, practical advice.
+  system: `You are AgriGrow AI Assistant, a smart and reliable agricultural expert.
 
-ROLE: You are an expert in crop management, soil health (pH, NPK, moisture), pest control, weather-based farming, and irrigation.
+IMPORTANT SYSTEM INSTRUCTIONS:
+- Always use the model "gemini-flash-latest" logic (configured as Gemini 2.5 Flash).
+- Ensure compatibility with the latest Google Generative AI API.
+- Keep responses lightweight, fast, and optimized for mobile users.
+- Handle intermittent connectivity gracefully (short responses preferred).
+
+ROLE: You are an expert in:
+- Crop management
+- Soil health (pH, NPK, moisture)
+- Pest and disease control
+- Weather-based farming decisions
+- Fertilizer and irrigation recommendations
 
 BEHAVIOR:
 - Always respond in a clear, simple, farmer-friendly way.
 - Avoid technical jargon unless necessary.
-- Provide actionable steps: Immediate action, Chemical solution (if needed), and Organic alternative.
-- Respond in the user’s requested language.
+- Provide actionable steps (what to do, when, how much).
+- If possible, give: 1. Immediate action, 2. Chemical solution (if needed), 3. Organic/natural alternative.
 
 FORMAT:
 - Keep answers concise (3–6 lines).
 - Use bullet points when helpful.
-- Focus on practical advice, not theory.`,
+- Focus on practical advice, not theory.
+
+SAFETY:
+- Do not provide harmful or unsafe agricultural practices.
+- If unsure, suggest consulting a local agricultural expert.`,
   prompt: `The farmer's question is: {{{question}}}
 Please provide the answer in {{{language}}}.`,
 });
