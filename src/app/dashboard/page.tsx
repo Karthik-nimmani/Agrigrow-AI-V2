@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -15,18 +16,18 @@ import {
   RefreshCw,
   Sparkles,
   Loader2,
-  ChevronRight,
   MapPin,
   Edit3,
   Trash2,
   Maximize,
   FileText,
   Bug,
-  X
+  X,
+  Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
+import { aiWeatherBased_CropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
 import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -54,7 +55,7 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
-  // 1. Initialize data fetching hooks first to avoid ReferenceErrors
+  // Initialize data hooks first
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -82,12 +83,10 @@ export default function Dashboard() {
       let currentLat = lat;
       let currentLon = lon;
 
-      // Fallback coordinates (e.g., Punjab area)
       if (!currentLat || !currentLon) {
         currentLat = 30.9010;
         currentLon = 75.8573;
 
-        // Try to get real location
         if (navigator.geolocation) {
           await new Promise((resolve) => {
             navigator.geolocation.getCurrentPosition(
@@ -103,14 +102,13 @@ export default function Dashboard() {
         }
       }
 
-      // Fetch LIVE weather data
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
       if (!weatherRes.ok) throw new Error("Weather API failed");
       const weatherJson = await weatherRes.json();
       
-      let locationName = "Your Region";
+      let locationName = "Local Region";
       try {
         const geoRes = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`,
@@ -118,15 +116,14 @@ export default function Dashboard() {
         );
         if (geoRes.ok) {
           const geoJson = await geoRes.json();
-          locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Your Region";
+          locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Local Region";
         }
       } catch (e) {
-        console.warn("Geocoding failed, using fallback name");
+        console.warn("Geocoding failed, using fallback");
       }
 
       const updatedTemp = weatherJson.current.temperature_2m;
       const updatedHumidity = weatherJson.current.relative_humidity_2m;
-      const updatedWind = weatherJson.current.wind_speed_10m;
 
       setWeatherData({
         temp: updatedTemp,
@@ -136,8 +133,7 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      // AI Advice using Gemini 2.5 Flash
-      const res = await aiWeatherBasedCropAdvice({
+      const res = await aiWeatherBased_CropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",
         currentConditions: {
@@ -145,22 +141,17 @@ export default function Dashboard() {
           humidity: updatedHumidity,
           soilMoisture: 45
         },
-        weatherForecast: `Live wind speed is ${updatedWind} km/h. High precision analysis requested.`,
+        weatherForecast: `Live wind speed is ${weatherJson.current.wind_speed_10m} km/h. High precision analysis requested.`,
         cropGrowthStage: "Vegetative"
       });
       setWeatherAdvice(res);
 
     } catch (err: any) {
       console.error("Weather Sync Error:", err);
-      toast({
-        variant: "destructive",
-        title: "Weather Sync Issue",
-        description: "Live data unavailable. Using cached values."
-      });
     } finally {
       setIsRefreshing(false);
     }
-  }, [user, fields, toast]);
+  }, [user, fields]);
 
   useEffect(() => {
     setMounted(true);
@@ -177,9 +168,6 @@ export default function Dashboard() {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
-
-  const totalArea = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
-  const potentialYield = totalArea * 2500; 
 
   const handleDeleteField = (fieldId: string) => {
     if (!user || !firestore) return;
@@ -200,23 +188,24 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 p-4 md:p-8 pb-24 text-slate-900">
+    <div className="space-y-10 p-4 md:p-8 pb-32 text-slate-900 bg-[#FBF9F6] min-h-screen">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold font-headline mb-2">Farm Overview</h1>
+          <h1 className="text-4xl font-bold font-headline mb-2 text-[#332010]">Farm Overview</h1>
           <p className="text-muted-foreground text-lg">Real-time monitoring and AI-driven precision tools.</p>
         </div>
       </div>
 
-      <Card className="border-none shadow-md bg-white overflow-hidden rounded-[2rem]">
-        <CardHeader className="bg-primary/5 border-b flex flex-row items-center justify-between py-4 px-8">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-full">
-              <CloudSun className="w-5 h-5 text-primary" />
+      {/* Meteorological Intelligence */}
+      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-[2.5rem]">
+        <CardHeader className="bg-[#FAF7F2] border-b flex flex-row items-center justify-between py-6 px-10">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-2xl">
+              <CloudSun className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Meteorological Intelligence</CardTitle>
-              <CardDescription className="text-xs">Live Sync • {weatherData.location}</CardDescription>
+              <CardTitle className="text-xl">Meteorological Intelligence</CardTitle>
+              <CardDescription className="text-sm font-medium">Live Sync • {weatherData.location}</CardDescription>
             </div>
           </div>
           <Button 
@@ -224,48 +213,48 @@ export default function Dashboard() {
             size="sm" 
             onClick={() => fetchWeatherIntelligence()} 
             disabled={isRefreshing}
-            className="rounded-full h-9 px-4 hover:bg-primary/10"
+            className="rounded-full h-10 px-5 hover:bg-primary/5 font-bold"
           >
             {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Sync
+            Sync Data
           </Button>
         </CardHeader>
-        <CardContent className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center p-4 rounded-3xl bg-muted/30">
-                  <Thermometer className="w-6 h-6 text-orange-500 mb-1" />
+        <CardContent className="p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="space-y-8">
+              <div className="grid grid-cols-3 gap-6">
+                <div className="flex flex-col items-center p-6 rounded-[2rem] bg-[#F8F5F0]">
+                  <Thermometer className="w-7 h-7 text-orange-500 mb-2" />
                   <span className="text-2xl font-black">{weatherData.temp}°C</span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Temp</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Temp</span>
                 </div>
-                <div className="flex flex-col items-center p-4 rounded-3xl bg-muted/30">
-                  <Droplets className="w-6 h-6 text-blue-500 mb-1" />
+                <div className="flex flex-col items-center p-6 rounded-[2rem] bg-[#F8F5F0]">
+                  <Droplets className="w-7 h-7 text-blue-500 mb-2" />
                   <span className="text-2xl font-black">{weatherData.humidity}%</span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Humidity</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Humidity</span>
                 </div>
-                <div className="flex flex-col items-center p-4 rounded-3xl bg-muted/30">
-                  <Sprout className="w-6 h-6 text-green-600 mb-1" />
+                <div className="flex flex-col items-center p-6 rounded-[2rem] bg-[#F8F5F0]">
+                  <Sprout className="w-7 h-7 text-green-600 mb-2" />
                   <span className="text-2xl font-black">{weatherData.soilMoisture}%</span>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground">Soil</span>
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Soil</span>
                 </div>
               </div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-2">
                 Last Updated: {weatherData.lastUpdated || "Syncing..."}
               </div>
             </div>
 
             <div className="lg:col-span-2">
-              <div className={`h-full rounded-[2rem] p-6 border transition-all ${weatherAdvice?.riskDetected ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-primary/5 border-primary/10'}`}>
-                <div className="flex items-start gap-5">
-                  <div className={`p-4 rounded-2xl shrink-0 ${weatherAdvice?.riskDetected ? 'bg-amber-100' : 'bg-primary/20'}`}>
-                    <Sparkles className={`w-8 h-8 ${weatherAdvice?.riskDetected ? 'text-amber-700' : 'text-primary'}`} />
+              <div className={`h-full rounded-[2.5rem] p-8 border transition-all duration-500 ${weatherAdvice?.riskDetected ? 'bg-amber-50 border-amber-100 shadow-inner' : 'bg-primary/5 border-primary/10'}`}>
+                <div className="flex items-start gap-6">
+                  <div className={`p-5 rounded-3xl shrink-0 ${weatherAdvice?.riskDetected ? 'bg-amber-100' : 'bg-primary/20'}`}>
+                    <Sparkles className={`w-10 h-10 ${weatherAdvice?.riskDetected ? 'text-amber-700' : 'text-primary'}`} />
                   </div>
-                  <div className="space-y-2">
-                    <h4 className={`text-xl font-bold ${weatherAdvice?.riskDetected ? 'text-amber-900' : 'text-primary'}`}>
+                  <div className="space-y-3">
+                    <h4 className={`text-2xl font-bold font-headline ${weatherAdvice?.riskDetected ? 'text-amber-900' : 'text-primary'}`}>
                       {weatherAdvice?.alert || "Atmospheric Condition: Stable"}
                     </h4>
-                    <p className="text-base text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-[#554030] leading-relaxed opacity-90">
                       {weatherAdvice?.advice || "Analyzing live atmospheric conditions..."}
                     </p>
                   </div>
@@ -276,88 +265,94 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-primary text-white p-8 rounded-3xl">
-          <div className="flex items-center gap-3 mb-4 opacity-90 text-xs font-bold uppercase tracking-wider">
-            <Sprout className="w-5 h-5" /> Total Area
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-5xl font-black">{totalArea.toFixed(1)}</span>
-            <span className="text-xl opacity-80 font-bold">Acres</span>
-          </div>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-white p-8 rounded-3xl">
-          <div className="flex items-center gap-3 mb-4 text-green-600 text-xs font-bold uppercase tracking-wider">
-            <TrendingUp className="w-5 h-5" /> Potential Yield
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-5xl font-black text-slate-800">{potentialYield.toLocaleString()}</span>
-            <span className="text-xl text-slate-500 font-bold">kg</span>
-          </div>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-white p-8 rounded-3xl">
-          <div className="flex items-center gap-3 mb-4 text-destructive text-xs font-bold uppercase tracking-wider">
-            <AlertTriangle className="w-5 h-5" /> Active Risks
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-5xl font-black text-slate-800">{weatherAdvice?.riskDetected ? '1' : '0'}</span>
-          </div>
-        </Card>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold font-headline text-slate-900">Active Cultivations</h2>
+      {/* Active Fields Section */}
+      <div className="space-y-8">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-4xl font-black font-headline text-[#332010]">Active Fields</h2>
           <Link href="/fields/new">
-            <Button className="rounded-2xl px-6 font-bold shadow-lg">
+            <Button className="rounded-2xl h-12 px-8 font-bold shadow-lg hover:scale-105 transition-all">
               <Plus className="w-5 h-5 mr-2" /> Add New Field
             </Button>
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {isFieldsLoading ? (
-            <div className="col-span-full py-12 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+            <div className="col-span-full py-20 flex justify-center"><Loader2 className="animate-spin text-primary h-10 w-10" /></div>
           ) : fields?.length === 0 ? (
-            <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed">
-              <p className="text-muted-foreground text-lg">No fields registered yet.</p>
+            <div className="col-span-full py-32 text-center bg-white rounded-[3rem] border-4 border-dashed border-slate-100">
+              <p className="text-muted-foreground text-xl font-medium">No fields registered yet.</p>
             </div>
           ) : (
             fields?.map((field) => (
-              <Card key={field.id} className="border-none shadow-sm bg-white rounded-3xl p-8 group relative overflow-hidden transition-all hover:shadow-md border border-transparent hover:border-primary/10">
-                <Link href={`/fields/${field.id}`}>
-                  <div className="space-y-4">
-                    <h4 className="text-2xl font-black text-slate-800 group-hover:text-primary transition-colors">{field.name}</h4>
-                    <div className="flex items-center gap-4 text-sm font-bold text-slate-500">
-                      <span>{field.area} Acres</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                      <span className="text-primary">{field.currentCropId}</span>
+              <Card key={field.id} className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden group hover:shadow-xl transition-all duration-300 relative">
+                <div className="flex h-full">
+                  {/* Left Accent Bar */}
+                  <div className="w-24 bg-[#F5F1EE] flex flex-col items-center justify-center gap-2 border-r">
+                    <Sprout className="w-8 h-8 text-[#A36B27]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#A36B27]">
+                      {field.currentCropId || 'CROP'}
+                    </span>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 p-8 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-4">
+                        <Link href={`/fields/${field.id}`}>
+                          <h4 className="text-2xl font-black text-[#332010] hover:text-primary transition-colors cursor-pointer leading-tight">
+                            {field.name}
+                          </h4>
+                        </Link>
+                        <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                      </div>
+                      
+                      <div className="space-y-2 mb-6">
+                        <div className="flex items-center gap-2 text-sm text-slate-500 font-bold">
+                          <MapPin className="w-4 h-4" /> {weatherData.location}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-base font-black text-[#332010]">{field.area} <span className="text-slate-400 font-bold">Acres</span></span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
+                          <span className="text-base font-black text-[#332010]">pH <span className="text-slate-400 font-bold">{field.soilPH}</span></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</span>
+                        <span className="text-sm font-black text-red-500 uppercase tracking-wider mt-1">Analysis Required</span>
+                      </div>
+                      
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <EditFieldDialog field={field} trigger={
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary">
+                            <Edit3 className="w-5 h-5" />
+                          </Button>
+                        } />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10">
+                              <Trash2 className="w-5 h-5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-3xl font-black font-headline">Delete Field?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-lg text-slate-600">
+                                Are you sure you want to delete "{field.name}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="gap-2">
+                              <AlertDialogCancel className="rounded-2xl h-12 px-8 font-bold">Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteField(field.id)} className="bg-red-500 hover:bg-red-600 rounded-2xl h-12 px-8 font-bold">Delete Permanently</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </div>
-                </Link>
-                <div className="absolute top-6 right-6 flex gap-2">
-                  <EditFieldDialog field={field} trigger={
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 hover:text-primary"><Edit3 className="w-5 h-5" /></Button>
-                  } />
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-destructive hover:bg-destructive/5"><Trash2 className="w-5 h-5" /></Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-3xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-2xl font-headline">Delete Field?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-base">
-                          Are you sure you want to delete "{field.name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteField(field.id)} className="bg-destructive hover:bg-destructive/90 rounded-xl">Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </div>
               </Card>
             ))
@@ -365,31 +360,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-10 right-10 flex flex-col gap-5 z-50">
         <Link href="/assistant">
-          <Button size="icon" className="w-16 h-16 rounded-full bg-white shadow-2xl text-primary border border-primary/10 hover:scale-110 transition-transform">
-            <Bot className="w-8 h-8" />
+          <Button size="icon" className="w-20 h-20 rounded-full bg-white shadow-2xl text-primary border-4 border-white hover:scale-110 transition-transform group">
+            <Bot className="w-10 h-10 group-hover:rotate-12 transition-transform" />
           </Button>
         </Link>
         
         <Popover open={isScannerOpen} onOpenChange={setIsScannerOpen}>
           <PopoverTrigger asChild>
-            <Button size="icon" className={`w-16 h-16 rounded-full shadow-2xl text-white transition-all hover:scale-110 ${isScannerOpen ? 'bg-slate-800' : 'bg-primary'}`}>
-              {isScannerOpen ? <X className="w-8 h-8" /> : <Maximize className="w-8 h-8" />}
+            <Button size="icon" className={`w-20 h-20 rounded-full shadow-2xl text-white transition-all hover:scale-110 ${isScannerOpen ? 'bg-slate-900' : 'bg-primary'} border-4 border-white`}>
+              {isScannerOpen ? <X className="w-10 h-10" /> : <Maximize className="w-10 h-10" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="end" side="top" className="w-64 p-3 border-none shadow-2xl rounded-[2rem] mb-4">
-            <div className="flex flex-col gap-2">
+          <PopoverContent align="end" side="top" className="w-72 p-4 border-none shadow-2xl rounded-[2.5rem] mb-6 mr-[-10px] bg-white">
+            <div className="flex flex-col gap-3">
               <Link href="/vision/soil">
-                <div className="flex items-center gap-4 p-4 rounded-2xl hover:bg-accent transition-colors cursor-pointer group">
-                  <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200"><FileText className="w-5 h-5 text-blue-600" /></div>
-                  <span className="text-sm font-bold text-slate-800">Soil Report</span>
+                <div className="flex items-center gap-5 p-5 rounded-[1.5rem] hover:bg-blue-50 transition-colors cursor-pointer group border-2 border-transparent hover:border-blue-100">
+                  <div className="p-3 bg-blue-100 rounded-2xl group-hover:bg-blue-200"><FileText className="w-6 h-6 text-blue-600" /></div>
+                  <span className="text-base font-black text-slate-800">Soil Report</span>
                 </div>
               </Link>
               <Link href="/vision/disease">
-                <div className="flex items-center gap-4 p-4 rounded-2xl hover:bg-accent transition-colors cursor-pointer group">
-                  <div className="p-2 bg-red-100 rounded-xl group-hover:bg-red-200"><Bug className="w-5 h-5 text-red-500" /></div>
-                  <span className="text-sm font-bold text-slate-800">Disease ID</span>
+                <div className="flex items-center gap-5 p-5 rounded-[1.5rem] hover:bg-red-50 transition-colors cursor-pointer group border-2 border-transparent hover:border-red-100">
+                  <div className="p-3 bg-red-100 rounded-2xl group-hover:bg-red-200"><Bug className="w-6 h-6 text-red-500" /></div>
+                  <span className="text-base font-black text-slate-800">Disease ID</span>
                 </div>
               </Link>
             </div>

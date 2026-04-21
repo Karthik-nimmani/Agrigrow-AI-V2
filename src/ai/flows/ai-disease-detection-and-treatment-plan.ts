@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Crop disease detection using Gemini 2.5 Flash.
@@ -38,7 +39,10 @@ const identifyDiseasePrompt = ai.definePrompt({
 
 Crop Photo: {{media url=photoDataUri}}
 
-Provide the diagnosis and a 3-step actionable treatment plan.`,
+Provide the diagnosis and a 3-step actionable treatment plan focusing on:
+1. Immediate action
+2. Chemical solution
+3. Organic alternative`,
 });
 
 const aiDiseaseDetectionAndTreatmentPlanFlow = ai.defineFlow(
