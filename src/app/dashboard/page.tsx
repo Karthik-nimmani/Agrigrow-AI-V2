@@ -55,7 +55,6 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
-  // Initialize data hooks first
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -84,7 +83,7 @@ export default function Dashboard() {
       let currentLon = lon;
 
       if (!currentLat || !currentLon) {
-        // Default to a central coordinates if geolocation is not available
+        // Fallback to a central location if needed
         currentLat = 30.9010;
         currentLon = 75.8573;
 
@@ -103,7 +102,6 @@ export default function Dashboard() {
         }
       }
 
-      // Fetch Real Weather Data
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
@@ -135,7 +133,6 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      // Call AI with real weather context
       const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",
@@ -144,7 +141,7 @@ export default function Dashboard() {
           humidity: updatedHumidity,
           soilMoisture: 45
         },
-        weatherForecast: `Live wind speed is ${weatherJson.current.wind_speed_10m} km/h. High precision analysis requested.`,
+        weatherForecast: `Live wind speed is ${weatherJson.current.wind_speed_10m} km/h.`,
         cropGrowthStage: "Vegetative"
       });
       setWeatherAdvice(res);
@@ -166,12 +163,6 @@ export default function Dashboard() {
     }
   }, [mounted, user, isUserLoading, fetchWeatherIntelligence]);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
   const handleDeleteField = (fieldId: string) => {
     if (!user || !firestore) return;
     const fieldRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
@@ -181,6 +172,11 @@ export default function Dashboard() {
       description: "Field has been successfully deleted."
     });
   };
+
+  // Calculations for summary stats
+  const totalAreaValue = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
+  const potentialYieldValue = totalAreaValue * 2500; // Placeholder calculation: 2.5 tons/acre -> 2500kg/acre
+  const activeRisksCount = weatherAdvice?.riskDetected ? 1 : 0;
 
   if (isUserLoading || !user) {
     return (
@@ -267,6 +263,47 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Summary Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-none shadow-sm bg-primary text-primary-foreground rounded-[2rem] overflow-hidden">
+          <CardContent className="p-8 space-y-4">
+            <div className="flex items-center gap-3">
+              <Sprout className="w-5 h-5 opacity-80" />
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Area</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-6xl font-black tracking-tighter">{totalAreaValue.toFixed(1)}</span>
+              <span className="text-xl font-bold opacity-80">Acres</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
+          <CardContent className="p-8 space-y-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Potential Yield</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-6xl font-black tracking-tighter text-[#332010]">{potentialYieldValue.toLocaleString()}</span>
+              <span className="text-xl font-bold text-slate-400">kg</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
+          <CardContent className="p-8 space-y-4">
+            <div className="flex items-center gap-3 text-red-500">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Risks</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-6xl font-black tracking-tighter text-[#332010]">{activeRisksCount}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Active Fields Section */}
       <div className="space-y-8">
