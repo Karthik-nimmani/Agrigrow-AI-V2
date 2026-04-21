@@ -57,6 +57,9 @@ const aiWeatherBasedCropAdviceFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await prompt(input);
-    return output || { advice: "Conditions are stable. Continue regular monitoring.", riskDetected: false };
+    if (!output) {
+      return { advice: "Conditions are stable. Continue regular monitoring.", riskDetected: false };
+    }
+    return output;
   }
 );

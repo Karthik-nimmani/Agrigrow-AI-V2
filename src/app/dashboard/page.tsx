@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Initialize queries at the top to avoid initialization errors
+  // Initialize queries at the top to avoid ReferenceErrors in callbacks
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');

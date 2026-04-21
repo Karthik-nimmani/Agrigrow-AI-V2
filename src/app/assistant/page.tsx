@@ -33,6 +33,7 @@ export default function AssistantPage() {
   const [language, setLanguage] = useState('English');
   const [isBotThinking, setIsBotThinking] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -51,17 +52,11 @@ export default function AssistantPage() {
 
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
-  };
-
+  // Improved auto-scroll logic
   useEffect(() => {
-    scrollToBottom();
+    if (scrollAnchorRef.current) {
+      scrollAnchorRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isBotThinking]);
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -104,7 +99,7 @@ export default function AssistantPage() {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
       const errorMessage = isQuotaError 
         ? "Daily request quota reached (30/day). Please try again tomorrow." 
-        : `AI Error: ${err.message || "The AI system is temporarily unavailable. Standardizing connection..."}`;
+        : `AI Model Identification Error: The requested Gemini model configuration is temporarily unavailable. Standardizing to stable flash-1.5. Error: ${err.message}`;
 
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
@@ -170,7 +165,7 @@ export default function AssistantPage() {
         </CardHeader>
         
         <CardContent className="flex-1 p-0 overflow-hidden relative bg-muted/5">
-          <ScrollArea className="h-full" ref={scrollRef}>
+          <ScrollArea className="h-full">
             <div className="px-6 py-6 space-y-6">
               {messages?.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.senderType === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -192,6 +187,7 @@ export default function AssistantPage() {
                   </div>
                 </div>
               )}
+              <div ref={scrollAnchorRef} className="h-2" />
             </div>
           </ScrollArea>
         </CardContent>

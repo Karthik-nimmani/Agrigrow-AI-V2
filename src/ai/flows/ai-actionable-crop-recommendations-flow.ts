@@ -1,27 +1,23 @@
 'use server';
 /**
  * @fileOverview This file implements a Genkit flow for generating actionable agricultural recommendations.
- *
- * - aiActionableCropRecommendations - A function that handles the generation of crop recommendations.
- * - AiActionableCropRecommendationsInput - The input type for the aiActionableCropRecommendations function.
- * - AiActionableCropRecommendationsOutput - The return type for the aiActionableCropRecommendations function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AiActionableCropRecommendationsInputSchema = z.object({
-  cropType: z.string().describe('The type of crop being grown in the field (e.g., "Corn", "Wheat").'),
+  cropType: z.string().describe('The type of crop being grown in the field.'),
   soilPH: z.number().min(0).max(14).describe('The current pH level of the soil.'),
   areaAcres: z.number().positive().describe('The area of the field in acres.'),
-  yieldForecast: z.string().describe('An AI-predicted yield forecast or analysis for the upcoming harvest.'),
-  soilNutrients: z.string().optional().describe('Optional: Detailed report of soil nutrients (e.g., "Nitrogen: 100ppm, Phosphorus: 50ppm, Potassium: 120ppm").'),
-  weatherForecast: z.string().optional().describe('Optional: Summary of the upcoming weather forecast (e.g., "Upcoming week: temperature 25C, rainfall 10mm").'),
+  yieldForecast: z.string().describe('An AI-predicted yield forecast or analysis.'),
+  soilNutrients: z.string().optional().describe('Optional: Detailed report of soil nutrients.'),
+  weatherForecast: z.string().optional().describe('Optional: Summary of the upcoming weather forecast.'),
 });
 export type AiActionableCropRecommendationsInput = z.infer<typeof AiActionableCropRecommendationsInputSchema>;
 
 const AiActionableCropRecommendationsOutputSchema = z.object({
-  recommendations: z.array(z.string()).describe('An array of actionable agricultural recommendations, e.g., "Apply 50kg lime/acre".'),
+  recommendations: z.array(z.string()).describe('An array of actionable agricultural recommendations.'),
 });
 export type AiActionableCropRecommendationsOutput = z.infer<typeof AiActionableCropRecommendationsOutputSchema>;
 
@@ -34,7 +30,7 @@ const aiActionableCropRecommendationsPrompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash',
   input: {schema: AiActionableCropRecommendationsInputSchema},
   output: {schema: AiActionableCropRecommendationsOutputSchema},
-  prompt: `You are an expert agricultural advisor. Your task is to provide concise, actionable recommendations to a farmer to optimize their agricultural practices and improve yields. Based on the provided field data and yield forecast, generate specific, practical advice.
+  prompt: `You are an expert agricultural advisor. Your task is to provide concise, actionable recommendations to a farmer to optimize their agricultural practices.
 
 Field Data:
 Crop Type: {{{cropType}}}
@@ -42,15 +38,7 @@ Soil pH: {{{soilPH}}}
 Field Area: {{{areaAcres}}} acres
 Yield Forecast: {{{yieldForecast}}}
 
-{{#if soilNutrients}}
-Soil Nutrient Report: {{{soilNutrients}}}
-{{/if}}
-
-{{#if weatherForecast}}
-Weather Forecast: {{{weatherForecast}}}
-{{/if}}
-
-Provide only actionable recommendations, formatted as a JSON array of strings. Each recommendation should be direct, practical, and quantifiable if applicable. For example: ['Apply 50kg lime/acre', 'Adjust irrigation to 1 inch per week']. Focus on tangible steps the farmer can take.`,
+Provide exactly 3 direct, practical, and quantifiable recommendations.`,
 });
 
 const aiActionableCropRecommendationsFlow = ai.defineFlow(
@@ -62,7 +50,7 @@ const aiActionableCropRecommendationsFlow = ai.defineFlow(
   async (input) => {
     const {output} = await aiActionableCropRecommendationsPrompt(input);
     if (!output) {
-      return { recommendations: ["Maintain current practices and monitor soil moisture."] };
+      return { recommendations: ["Monitor soil moisture", "Check for pests", "Maintain current pH"] };
     }
     return output;
   },

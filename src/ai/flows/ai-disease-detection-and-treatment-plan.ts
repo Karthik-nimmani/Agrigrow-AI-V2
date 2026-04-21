@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview An AI agent for identifying crop diseases/pests from a photo and providing a 3-part treatment plan.
- *
- * - aiDiseaseDetectionAndTreatmentPlan - A function that handles the disease detection and treatment plan generation process.
- * - CropPhotoInput - The input type for the aiDiseaseDetectionAndTreatmentPlan function.
- * - DiseaseDetectionOutput - The return type for the aiDiseaseDetectionAndTreatmentPlan function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -48,8 +44,6 @@ const identifyDiseasePrompt = ai.definePrompt({
   prompt: `You are an expert agricultural botanist specializing in crop disease and pest identification.
 
 Analyze the provided image of a crop to identify any diseases or pests present. If no disease or pest is detected, set 'diseaseDetected' to false, 'diseaseName' to "None", and provide a general health description and a three-part general plant care plan. If a disease or pest is detected, identify it, describe it, and provide a concise, actionable three-part treatment plan to address it.
-
-The 'treatmentPlan' array must contain exactly three distinct steps or recommendations.
 
 Crop Photo: {{media url=photoDataUri}}`,
 });
