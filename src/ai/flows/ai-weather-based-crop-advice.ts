@@ -37,13 +37,15 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: AiWeatherBasedCropAdviceInputSchema},
   output: {schema: AiWeatherBasedCropAdviceOutputSchema},
-  prompt: `You are an expert agricultural advisor. Analyze weather risks.
+  prompt: `You are an expert agricultural advisor. Analyze weather risks for precision farming.
 Location: {{{location}}}
 Crop: {{{cropType}}}
-Temp: {{{currentConditions.temperature}}}°C
+Current Temp: {{{currentConditions.temperature}}}°C
 Humidity: {{{currentConditions.humidity}}}%
 Soil Moisture: {{{currentConditions.soilMoisture}}}%
-Forecast: {{{weatherForecast}}}`,
+Weather Context: {{{weatherForecast}}}
+
+Provide actionable advice to protect yield.`,
 });
 
 const aiWeatherBasedCropAdviceFlow = ai.defineFlow(

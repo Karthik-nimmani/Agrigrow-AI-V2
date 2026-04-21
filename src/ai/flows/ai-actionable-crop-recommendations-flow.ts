@@ -7,12 +7,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AiActionableCropRecommendationsInputSchema = z.object({
-  cropType: z.string().describe('The type of crop being grown in the field.'),
-  soilPH: z.number().min(0).max(14).describe('The current pH level of the soil.'),
-  areaAcres: z.number().positive().describe('The area of the field in acres.'),
-  yieldForecast: z.string().describe('An AI-predicted yield forecast or analysis.'),
-  soilNutrients: z.string().optional().describe('Optional: Detailed report of soil nutrients.'),
-  weatherForecast: z.string().optional().describe('Optional: Summary of the upcoming weather forecast.'),
+  cropType: z.string(),
+  soilPH: z.number().min(0).max(14),
+  areaAcres: z.number().positive(),
+  yieldForecast: z.string(),
+  soilNutrients: z.string().optional(),
+  weatherForecast: z.string().optional(),
 });
 export type AiActionableCropRecommendationsInput = z.infer<typeof AiActionableCropRecommendationsInputSchema>;
 
@@ -30,13 +30,12 @@ const aiActionableCropRecommendationsPrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: AiActionableCropRecommendationsInputSchema},
   output: {schema: AiActionableCropRecommendationsOutputSchema},
-  prompt: `You are an expert agricultural advisor. Provide 3 concise, practical, and quantifiable recommendations.
+  prompt: `You are a professional agricultural consultant. Provide 3 high-impact, actionable steps to maximize yield for this specific field.
 
-Field Data:
-Crop Type: {{{cropType}}}
+Crop: {{{cropType}}}
 Soil pH: {{{soilPH}}}
-Field Area: {{{areaAcres}}} acres
-Yield Forecast: {{{yieldForecast}}}`,
+Area: {{{areaAcres}}} acres
+Current Forecast Context: {{{yieldForecast}}}`,
 });
 
 const aiActionableCropRecommendationsFlow = ai.defineFlow(
@@ -48,7 +47,7 @@ const aiActionableCropRecommendationsFlow = ai.defineFlow(
   async (input) => {
     const {output} = await aiActionableCropRecommendationsPrompt(input);
     if (!output) {
-      return { recommendations: ["Monitor soil moisture", "Check for pests", "Maintain current pH"] };
+      return { recommendations: ["Monitor soil moisture", "Apply NPK fertilizer", "Inspect for early signs of blight"] };
     }
     return output;
   },

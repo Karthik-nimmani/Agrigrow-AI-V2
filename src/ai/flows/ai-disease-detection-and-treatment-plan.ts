@@ -34,9 +34,11 @@ const identifyDiseasePrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: CropPhotoInputSchema},
   output: {schema: DiseaseDetectionOutputSchema},
-  prompt: `You are an expert agricultural botanist. Analyze the provided image to identify diseases or pests.
+  prompt: `You are an expert agricultural botanist. Analyze the provided image to identify pests or diseases with clinical precision.
 
-Crop Photo: {{media url=photoDataUri}}`,
+Crop Photo: {{media url=photoDataUri}}
+
+Provide the diagnosis and a 3-step actionable treatment plan.`,
 });
 
 const aiDiseaseDetectionAndTreatmentPlanFlow = ai.defineFlow(

@@ -38,12 +38,15 @@ const yieldForecastPrompt = ai.definePrompt({
   model: 'googleai/gemini-2.5-flash',
   input: {schema: YieldForecastInputSchema},
   output: {schema: YieldForecastOutputSchema},
-  prompt: `You are an expert agricultural AI. Predict yield and explain factors.
+  prompt: `You are an expert agricultural AI. Predict yield based on precision farming data.
 
+Field Profile:
 Crop: {{{cropType}}}
 Area: {{{fieldArea}}} {{{fieldAreaUnit}}}
 Soil pH: {{{soilpH}}}
-History: {{{yieldHistory}}}`,
+Environmental History: {{{yieldHistory}}}
+
+Analyze factors like rainfall, temperature, and pests to provide a realistic forecast.`,
 });
 
 const yieldForecastFlow = ai.defineFlow(

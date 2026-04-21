@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Initialize queries at the top
+  // Initialize queries at the top to ensure they are available for useCallbacks
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -92,7 +92,7 @@ export default function Dashboard() {
               resolve(true);
             },
             () => {
-              // Fallback to Punjab coordinates
+              // Fallback to Punjab coordinates if geolocation fails
               currentLat = 30.9010;
               currentLon = 75.8573;
               resolve(true);
@@ -101,12 +101,13 @@ export default function Dashboard() {
         });
       }
 
-      // Fetch LIVE weather data
+      // Fetch LIVE weather data from Open-Meteo
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
       const weatherJson = await weatherRes.json();
       
+      // Fetch Location Name from Nominatim
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`
       );
@@ -134,7 +135,7 @@ export default function Dashboard() {
           humidity: updatedHumidity,
           soilMoisture: 45
         },
-        weatherForecast: `Live conditions in ${locationName}. Wind speed is ${updatedWind} km/h.`,
+        weatherForecast: `Live conditions in ${locationName}. Wind speed is ${updatedWind} km/h. High precision agronomic analysis requested.`,
         cropGrowthStage: "Vegetative"
       });
       setWeatherAdvice(res);
@@ -146,12 +147,13 @@ export default function Dashboard() {
     }
   }, [user, fields]);
 
+  // Handle initialization and automatic refresh
   useEffect(() => {
     setMounted(true);
-    if (user && fields !== undefined) {
+    if (user && !isUserLoading) {
       fetchWeatherIntelligence();
     }
-  }, [user, fields, fetchWeatherIntelligence]);
+  }, [user, isUserLoading, fetchWeatherIntelligence]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {

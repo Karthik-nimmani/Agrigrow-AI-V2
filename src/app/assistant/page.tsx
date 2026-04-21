@@ -1,20 +1,17 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  MessageSquare, 
   Send, 
   Loader2, 
   Globe, 
-  User, 
-  Bot,
-  Sparkles,
   Trash2,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  Bot
 } from 'lucide-react';
 import { agriBotFarmAssistant } from '@/ai/flows/agri-bot-farm-assistant';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,7 +29,6 @@ export default function AssistantPage() {
   const [input, setInput] = useState('');
   const [language, setLanguage] = useState('English');
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +48,7 @@ export default function AssistantPage() {
 
   const { data: messages, isLoading: isChatLoading } = useCollection(messagesQuery);
 
-  // Improved auto-scroll logic
+  // Smooth auto-scroll to the latest message
   useEffect(() => {
     if (scrollAnchorRef.current) {
       scrollAnchorRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -98,8 +94,8 @@ export default function AssistantPage() {
     } catch (err: any) {
       const isQuotaError = err.message?.includes('429') || err.message?.toLowerCase().includes('quota');
       const errorMessage = isQuotaError 
-        ? "Daily request quota reached (30/day). Please try again tomorrow." 
-        : `AI Model Identification Error: The requested Gemini model configuration is temporarily unavailable. Standardizing to stable flash-1.5. Error: ${err.message}`;
+        ? "Daily request quota reached. Please try again tomorrow." 
+        : `AI Connection Error: ${err.message}. Please check your Google AI Studio configuration.`;
 
       const errorMsgId = crypto.randomUUID();
       const errorMsgRef = doc(firestore, 'users', user.uid, 'chatMessages', errorMsgId);
@@ -145,7 +141,10 @@ export default function AssistantPage() {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
-            <CardTitle className="text-lg">Agri-Bot Assistant</CardTitle>
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg">Agri-Bot Assistant</CardTitle>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Select value={language} onValueChange={setLanguage}>
