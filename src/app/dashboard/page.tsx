@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -54,7 +54,6 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
-  // INITIALIZE FIELDS QUERY AT THE TOP
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -320,7 +319,6 @@ export default function Dashboard() {
             fields?.map((field) => (
               <Card key={field.id} className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden group hover:shadow-xl transition-all duration-300 relative">
                 <div className="flex h-full">
-                  {/* Left Accent Bar */}
                   <div className="w-24 bg-[#F5F1EE] flex flex-col items-center justify-center gap-2 border-r">
                     <Sprout className="w-8 h-8 text-[#A36B27]" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#A36B27]">
@@ -328,7 +326,6 @@ export default function Dashboard() {
                     </span>
                   </div>
 
-                  {/* Main Content */}
                   <div className="flex-1 p-8 flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start mb-4">
@@ -393,7 +390,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-10 right-10 flex flex-col gap-5 z-50">
         <Link href="/assistant">
           <Button size="icon" className="w-20 h-20 rounded-full bg-white shadow-2xl text-primary border-4 border-white hover:scale-110 transition-transform group">
