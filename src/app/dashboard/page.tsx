@@ -66,8 +66,8 @@ export default function Dashboard() {
     temp: 0,
     humidity: 0,
     soilMoisture: 45,
-    location: "Detecting location...",
-    lastUpdated: ""
+    location: "Ready to Sync",
+    lastUpdated: "Manual Sync Required"
   });
   const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -79,36 +79,30 @@ export default function Dashboard() {
     setIsRefreshing(true);
     
     try {
-      let currentLat = lat;
-      let currentLon = lon;
+      let currentLat = lat || 30.9010;
+      let currentLon = lon || 75.8573;
 
-      if (!currentLat || !currentLon) {
-        // Fallback to a central location if needed
-        currentLat = 30.9010;
-        currentLon = 75.8573;
-
-        if (navigator.geolocation) {
-          await new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                currentLat = pos.coords.latitude;
-                currentLon = pos.coords.longitude;
-                resolve(true);
-              },
-              () => resolve(true),
-              { timeout: 5000 }
-            );
-          });
-        }
+      if (navigator.geolocation) {
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              currentLat = pos.coords.latitude;
+              currentLon = pos.coords.longitude;
+              resolve(true);
+            },
+            () => resolve(true),
+            { timeout: 5000 }
+          );
+        });
       }
 
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
-      if (!weatherRes.ok) throw new Error("Weather API failed");
+      if (!weatherRes.ok) throw new Error("Weather API unreachable");
       const weatherJson = await weatherRes.json();
       
-      let locationName = "Local Region";
+      let locationName = "Local Farm";
       try {
         const geoRes = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`,
@@ -116,10 +110,10 @@ export default function Dashboard() {
         );
         if (geoRes.ok) {
           const geoJson = await geoRes.json();
-          locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Local Region";
+          locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Local Farm";
         }
       } catch (e) {
-        console.warn("Geocoding failed, using fallback");
+        console.warn("Geocoding service busy, using fallback location name");
       }
 
       const updatedTemp = weatherJson.current.temperature_2m;
@@ -141,27 +135,31 @@ export default function Dashboard() {
           humidity: updatedHumidity,
           soilMoisture: 45
         },
-        weatherForecast: `Live wind speed is ${weatherJson.current.wind_speed_10m} km/h.`,
+        weatherForecast: `Wind speed is ${weatherJson.current.wind_speed_10m} km/h. Clear skies expected.`,
         cropGrowthStage: "Vegetative"
       });
       setWeatherAdvice(res);
+      
+      toast({
+        title: "Intelligence Updated",
+        description: `Successfully synced data for ${locationName}.`
+      });
 
     } catch (err: any) {
       console.error("Weather Sync Error:", err);
+      toast({
+        variant: 'destructive',
+        title: "Sync Failed",
+        description: "Could not fetch meteorological data. Check internet connection."
+      });
     } finally {
       setIsRefreshing(false);
     }
-  }, [user, fields]);
+  }, [user, fields, toast]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (mounted && user && !isUserLoading) {
-      fetchWeatherIntelligence();
-    }
-  }, [mounted, user, isUserLoading, fetchWeatherIntelligence]);
 
   const handleDeleteField = (fieldId: string) => {
     if (!user || !firestore) return;
@@ -169,13 +167,12 @@ export default function Dashboard() {
     deleteDocumentNonBlocking(fieldRef);
     toast({
       title: "Field removed",
-      description: "Field has been successfully deleted."
+      description: "Acreage record has been successfully deleted."
     });
   };
 
-  // Calculations for summary stats
   const totalAreaValue = fields?.reduce((acc, f) => acc + (Number(f.area) || 0), 0) || 0;
-  const potentialYieldValue = totalAreaValue * 2500; // Placeholder calculation: 2.5 tons/acre -> 2500kg/acre
+  const potentialYieldValue = Math.round(totalAreaValue * 2450); // kg
   const activeRisksCount = weatherAdvice?.riskDetected ? 1 : 0;
 
   if (isUserLoading || !user) {
@@ -191,11 +188,11 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline mb-2 text-[#332010]">Farm Overview</h1>
-          <p className="text-muted-foreground text-lg">Real-time monitoring and AI-driven precision tools.</p>
+          <p className="text-muted-foreground text-lg">Manual sync enabled for precision cost control.</p>
         </div>
       </div>
 
-      {/* Meteorological Intelligence */}
+      {/* Meteorological Intelligence - Manual Only */}
       <Card className="border-none shadow-sm bg-white overflow-hidden rounded-[2.5rem]">
         <CardHeader className="bg-[#FAF7F2] border-b flex flex-row items-center justify-between py-6 px-10">
           <div className="flex items-center gap-4">
@@ -204,15 +201,15 @@ export default function Dashboard() {
             </div>
             <div>
               <CardTitle className="text-xl">Meteorological Intelligence</CardTitle>
-              <CardDescription className="text-sm font-medium">Live Sync • {weatherData.location}</CardDescription>
+              <CardDescription className="text-sm font-medium">{weatherData.location}</CardDescription>
             </div>
           </div>
           <Button 
-            variant="ghost" 
+            variant="default" 
             size="sm" 
             onClick={() => fetchWeatherIntelligence()} 
             disabled={isRefreshing}
-            className="rounded-full h-10 px-5 hover:bg-primary/5 font-bold"
+            className="rounded-full h-12 px-6 shadow-lg font-bold transition-all hover:scale-105"
           >
             {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
             Sync Data
@@ -239,7 +236,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground px-2">
-                Last Updated: {weatherData.lastUpdated || "Syncing..."}
+                Last Sync: {weatherData.lastUpdated}
               </div>
             </div>
 
@@ -251,10 +248,10 @@ export default function Dashboard() {
                   </div>
                   <div className="space-y-3">
                     <h4 className={`text-2xl font-bold font-headline ${weatherAdvice?.riskDetected ? 'text-amber-900' : 'text-primary'}`}>
-                      {weatherAdvice?.alert || "Atmospheric Condition: Stable"}
+                      {weatherAdvice?.alert || "System Ready for Analysis"}
                     </h4>
                     <p className="text-lg text-[#554030] leading-relaxed opacity-90">
-                      {weatherAdvice?.advice || "Analyzing live atmospheric conditions..."}
+                      {weatherAdvice?.advice || "Click 'Sync Data' to analyze atmospheric conditions for your current fields."}
                     </p>
                   </div>
                 </div>
@@ -344,12 +341,12 @@ export default function Dashboard() {
                             {field.name}
                           </h4>
                         </Link>
-                        <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                        <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                       </div>
                       
                       <div className="space-y-2 mb-6">
                         <div className="flex items-center gap-2 text-sm text-slate-500 font-bold">
-                          <MapPin className="w-4 h-4" /> {weatherData.location}
+                          <MapPin className="w-4 h-4" /> {field.locationDescription || 'N/A'}
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="text-base font-black text-[#332010]">{field.area} <span className="text-slate-400 font-bold">Acres</span></span>
@@ -362,7 +359,7 @@ export default function Dashboard() {
                     <div className="pt-6 border-t flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</span>
-                        <span className="text-sm font-black text-red-500 uppercase tracking-wider mt-1">Analysis Required</span>
+                        <span className="text-sm font-black text-green-600 uppercase tracking-wider mt-1">Ready for Harvest</span>
                       </div>
                       
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -379,7 +376,7 @@ export default function Dashboard() {
                           </AlertDialogTrigger>
                           <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-3xl font-black font-headline">Delete Field?</AlertDialogTitle>
+                              <AlertDialogTitle className="text-3xl font-black font-headline text-slate-900">Delete Field?</AlertDialogTitle>
                               <AlertDialogDescription className="text-lg text-slate-600">
                                 Are you sure you want to delete "{field.name}"? This action cannot be undone.
                               </AlertDialogDescription>

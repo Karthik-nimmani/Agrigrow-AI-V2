@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Weather-based crop advice using Gemini 2.5 Flash.
@@ -38,14 +39,16 @@ const prompt = ai.definePrompt({
   input: {schema: AiWeatherBasedCropAdviceInputSchema},
   output: {schema: AiWeatherBasedCropAdviceOutputSchema},
   prompt: `You are an expert agricultural advisor. Analyze weather risks for precision farming.
-Location: {{{location}}}
-Crop: {{{cropType}}}
-Current Temp: {{{currentConditions.temperature}}}°C
-Humidity: {{{currentConditions.humidity}}}%
-Soil Moisture: {{{currentConditions.soilMoisture}}}%
-Weather Context: {{{weatherForecast}}}
 
-Provide actionable advice to protect yield.`,
+LOCATION: {{{location}}}
+CROP: {{{cropType}}}
+CURRENT TEMPERATURE: {{{currentConditions.temperature}}}°C
+HUMIDITY: {{{currentConditions.humidity}}}%
+SOIL MOISTURE: {{{currentConditions.soilMoisture}}}%
+FORECAST CONTEXT: {{{weatherForecast}}}
+
+Determine if there are atmospheric risks (frost, heatwave, excessive humidity, etc.).
+Provide a short alert heading and specific actionable advice to protect yield.`,
 });
 
 const aiWeatherBasedCropAdviceFlow = ai.defineFlow(
