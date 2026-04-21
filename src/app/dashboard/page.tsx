@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { aiWeatherBased_CropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
+import { aiWeatherBasedCropAdvice, type AiWeatherBasedCropAdviceOutput } from '@/ai/flows/ai-weather-based-crop-advice';
 import { useFirestore, useUser, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -84,6 +84,7 @@ export default function Dashboard() {
       let currentLon = lon;
 
       if (!currentLat || !currentLon) {
+        // Default to a central coordinates if geolocation is not available
         currentLat = 30.9010;
         currentLon = 75.8573;
 
@@ -102,6 +103,7 @@ export default function Dashboard() {
         }
       }
 
+      // Fetch Real Weather Data
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${currentLat}&longitude=${currentLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
       );
@@ -133,7 +135,8 @@ export default function Dashboard() {
         lastUpdated: new Date().toLocaleTimeString()
       });
 
-      const res = await aiWeatherBased_CropAdvice({
+      // Call AI with real weather context
+      const res = await aiWeatherBasedCropAdvice({
         location: locationName,
         cropType: fields?.length ? (fields[0].currentCropId || "Wheat") : "Wheat",
         currentConditions: {
