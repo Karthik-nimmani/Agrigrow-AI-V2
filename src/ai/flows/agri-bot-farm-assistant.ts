@@ -35,7 +35,6 @@ const prompt = ai.definePrompt({
 IMPORTANT SYSTEM INSTRUCTIONS:
 - Always use the model "gemini-flash-latest" (configured as Gemini 2.5 Flash).
 - Ensure compatibility with the latest Google Generative AI API.
-- Do not use deprecated models such as "gemini-1.5-flash".
 - Keep responses lightweight, fast, and optimized for mobile users.
 - Handle intermittent connectivity gracefully (short responses preferred).
 

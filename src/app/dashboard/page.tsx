@@ -67,7 +67,7 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Initialize queries at the top to ensure they are available for useCallbacks
+  // Initialize queries
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
@@ -85,6 +85,11 @@ export default function Dashboard() {
 
       if (!currentLat || !currentLon) {
         await new Promise((resolve) => {
+          if (!navigator.geolocation) {
+             currentLat = 30.9010;
+             currentLon = 75.8573;
+             return resolve(true);
+          }
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               currentLat = pos.coords.latitude;
@@ -107,12 +112,20 @@ export default function Dashboard() {
       );
       const weatherJson = await weatherRes.json();
       
-      // Fetch Location Name from Nominatim
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`
-      );
-      const geoJson = await geoRes.json();
-      const locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Your Region";
+      // Fetch Location Name from Nominatim with error handling
+      let locationName = "Your Region";
+      try {
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLat}&lon=${currentLon}&zoom=10`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        if (geoRes.ok) {
+          const geoJson = await geoRes.json();
+          locationName = geoJson.address.city || geoJson.address.town || geoJson.address.state || "Your Region";
+        }
+      } catch (e) {
+        console.error("Geocoding fetch failed:", e);
+      }
 
       const updatedTemp = weatherJson.current.temperature_2m;
       const updatedHumidity = weatherJson.current.relative_humidity_2m;
@@ -142,18 +155,26 @@ export default function Dashboard() {
 
     } catch (err: any) {
       console.error("Weather Sync Error:", err);
+      toast({
+        variant: "destructive",
+        title: "Weather Sync Failed",
+        description: "Unable to retrieve live data. Using local cached values."
+      });
     } finally {
       setIsRefreshing(false);
     }
-  }, [user, fields]);
+  }, [user, fields, toast]);
 
-  // Handle initialization and automatic refresh
+  // Handle initialization and automatic refresh on mount
   useEffect(() => {
     setMounted(true);
-    if (user && !isUserLoading) {
+  }, []);
+
+  useEffect(() => {
+    if (mounted && user && !isUserLoading) {
       fetchWeatherIntelligence();
     }
-  }, [user, isUserLoading, fetchWeatherIntelligence]);
+  }, [mounted, user, isUserLoading, fetchWeatherIntelligence]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
