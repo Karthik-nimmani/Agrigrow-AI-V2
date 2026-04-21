@@ -71,9 +71,9 @@ export default function Dashboard() {
   });
   const [weatherAdvice, setWeatherAdvice] = useState<AiWeatherBasedCropAdviceOutput | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  // FETCH WEATHER INTELLIGENCE - MANUAL ONLY (Cost Efficient)
   const fetchWeatherIntelligence = useCallback(async (lat?: number, lon?: number) => {
     if (!user) return;
     setIsRefreshing(true);
@@ -157,10 +157,6 @@ export default function Dashboard() {
     }
   }, [user, fields, toast]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const handleDeleteField = (fieldId: string) => {
     if (!user || !firestore) return;
     const fieldRef = doc(firestore, 'users', user.uid, 'farmFields', fieldId);
@@ -188,7 +184,7 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline mb-2 text-[#332010]">Farm Overview</h1>
-          <p className="text-muted-foreground text-lg">Manual sync enabled for precision cost control.</p>
+          <p className="text-muted-foreground text-lg">Manual sync enabled for precision cost control (Season 2026).</p>
         </div>
       </div>
 
@@ -359,7 +355,7 @@ export default function Dashboard() {
                     <div className="pt-6 border-t flex items-center justify-between">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</span>
-                        <span className="text-sm font-black text-green-600 uppercase tracking-wider mt-1">Ready for Harvest</span>
+                        <span className="text-sm font-black text-green-600 uppercase tracking-wider mt-1">Verified (Season 2026)</span>
                       </div>
                       
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

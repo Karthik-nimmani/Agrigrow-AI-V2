@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -85,7 +86,7 @@ export default function LandingPage() {
             <Sprout className="h-5 w-5 text-primary" />
             <span className="font-bold text-primary">AgriGrow AI</span>
           </div>
-          <p className="text-sm text-muted-foreground">© 2024 AgriGrow AI. Empowering rural innovation.</p>
+          <p className="text-sm text-muted-foreground">© 2026 AgriGrow AI. Empowering rural innovation.</p>
           <div className="flex gap-6">
             <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Terms</Link>
             <Link href="#" className="text-sm text-muted-foreground hover:text-primary">Privacy</Link>
