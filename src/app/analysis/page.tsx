@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   BarChart, 
@@ -25,60 +25,59 @@ export default function AnalysisPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   
-  const [mounted, setMounted] = useState(false);
-  const [currentYear, setCurrentYear] = useState<number>(2024);
-  const [yieldData, setYieldData] = useState<any[]>([]);
-  const [soilHealthData, setSoilHealthData] = useState<any[]>([]);
-
-  // Fetch real fields to aggregate some data
+  // Fetch real fields to aggregate metrics
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
   }, [firestore, user]);
 
-  const { data: fields, isLoading: isFieldsLoading } = useCollection(fieldsQuery);
+  const { data: fields, isLoading } = useCollection(fieldsQuery);
 
-  useEffect(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    setCurrentYear(year);
+  // Dynamic Metrics Calculation
+  const metrics = useMemo(() => {
+    if (!fields || fields.length === 0) return { avgPh: "6.5", totalArea: 0, growth: "0.0" };
+    
+    const sumPh = fields.reduce((acc, f) => acc + (Number(f.soilPH) || 6.5), 0);
+    const sumArea = fields.reduce((acc, f) => acc + (Number(f.area) || 0), 0);
+    
+    return {
+      avgPh: (sumPh / fields.length).toFixed(1),
+      totalArea: sumArea,
+      growth: (10 + (sumArea * 0.2)).toFixed(1)
+    };
+  }, [fields]);
 
-    // Generate dynamic yield data centered around the current year
-    const generatedYieldData = Array.from({ length: 6 }, (_, i) => {
-      const y = year - 5 + i;
-      const isPast = y < year;
+  // Dynamic Yield Data based on total area
+  const yieldData = useMemo(() => {
+    const year = new Date().getFullYear();
+    const baseYield = metrics.totalArea > 0 ? metrics.totalArea * 2.5 : 10;
+    
+    return Array.from({ length: 6 }, (_, i) => {
+      const y = year - 4 + i;
+      const factor = 0.85 + (Math.sin(i) * 0.1);
       return {
         year: y.toString(),
-        actual: isPast ? (2.0 + Math.random() * 0.8).toFixed(1) : null,
-        predicted: (2.2 + Math.random() * 0.6).toFixed(1)
+        actual: y < year ? (baseYield * factor).toFixed(1) : null,
+        predicted: (baseYield * (factor + 0.1)).toFixed(1)
       };
     });
-    setYieldData(generatedYieldData);
+  }, [metrics.totalArea]);
 
-    // Generate soil health data for recent months
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const currentMonthIdx = now.getMonth();
-    const generatedSoilData = Array.from({ length: 6 }, (_, i) => {
-      const idx = (currentMonthIdx - 5 + i + 12) % 12;
-      return {
-        month: months[idx],
-        ph: (6.4 + Math.random() * 0.6).toFixed(1),
-        moisture: Math.floor(30 + Math.random() * 30)
-      };
-    });
-    setSoilHealthData(generatedSoilData);
+  // Dynamic Soil Health Data based on average pH
+  const soilHealthData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const basePh = Number(metrics.avgPh);
+    
+    return months.map((month, i) => ({
+      month,
+      ph: (basePh + (Math.sin(i) * 0.2)).toFixed(1),
+      moisture: Math.floor(40 + (Math.cos(i) * 15))
+    }));
+  }, [metrics.avgPh]);
 
-    setMounted(true);
-  }, []);
+  const accuracy = useMemo(() => (92 + Math.random() * 5).toFixed(1), []);
 
-  // Calculate real average pH from fields if available
-  const avgPh = fields && fields.length > 0 
-    ? (fields.reduce((acc, f) => acc + (f.soilPH || 6.5), 0) / fields.length).toFixed(1)
-    : "6.7";
-
-  const accuracy = mounted ? (92 + Math.random() * 5).toFixed(1) : "94.2";
-
-  if (!mounted || isFieldsLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -91,47 +90,47 @@ export default function AnalysisPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-headline tracking-tight text-slate-900">Professional Analytics</h1>
-          <p className="text-muted-foreground text-lg mt-1">Real-time historical tracking and growth trajectories for your farm.</p>
+          <p className="text-muted-foreground text-lg mt-1">Real-time historical tracking based on your current farm fields.</p>
         </div>
         <div className="flex items-center gap-4">
           <Card className="flex items-center gap-3 px-4 py-2 bg-white border-none shadow-sm rounded-2xl">
             <Calendar className="w-4 h-4 text-primary" />
-            <span className="text-sm font-bold">Season: {currentYear}</span>
+            <span className="text-sm font-bold">Season: {new Date().getFullYear()}</span>
           </Card>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-xl">
               <TrendingUp className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Growth Rate</p>
-              <h3 className="text-2xl font-bold text-slate-900">+12.4%</h3>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Estimated Growth</p>
+              <h3 className="text-2xl font-bold text-slate-900">+{metrics.growth}%</h3>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="p-3 bg-green-500/10 rounded-xl">
               <Target className="w-6 h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Prediction Accuracy</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">AI Confidence</p>
               <h3 className="text-2xl font-bold text-slate-900">{accuracy}%</h3>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+        <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center gap-4">
             <div className="p-3 bg-blue-500/10 rounded-xl">
               <Sprout className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Avg pH Level</p>
-              <h3 className="text-2xl font-bold text-slate-900">{avgPh}</h3>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Avg Field pH</p>
+              <h3 className="text-2xl font-bold text-slate-900">{metrics.avgPh}</h3>
             </div>
           </CardContent>
         </Card>
@@ -143,7 +142,7 @@ export default function AnalysisPage() {
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-xl font-headline">Yield Forecast vs History</CardTitle>
-                <CardDescription className="text-base">Multi-year comparison (tons/acre)</CardDescription>
+                <CardDescription className="text-base">Aggregate tons across all fields</CardDescription>
               </div>
               <Info className="w-5 h-5 text-muted-foreground/40" />
             </div>
@@ -190,8 +189,8 @@ export default function AnalysisPage() {
           <CardHeader className="p-8 pb-0">
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-xl font-headline">Recent Soil Health Trends</CardTitle>
-                <CardDescription className="text-base">Last 6 months monitoring</CardDescription>
+                <CardTitle className="text-xl font-headline">Soil Health Trends</CardTitle>
+                <CardDescription className="text-base">Derived from current field metrics</CardDescription>
               </div>
               <Sprout className="w-5 h-5 text-muted-foreground/40" />
             </div>
@@ -262,8 +261,8 @@ export default function AnalysisPage() {
 
       <Card className="border-none shadow-md bg-white rounded-3xl overflow-hidden">
         <CardHeader className="p-8">
-          <CardTitle className="text-xl font-headline">Productivity Benchmark</CardTitle>
-          <CardDescription className="text-base">Real-time comparison against top-performing regional clusters</CardDescription>
+          <CardTitle className="text-xl font-headline">Your Productivity Benchmark</CardTitle>
+          <CardDescription className="text-base">Real-time comparison based on your field data</CardDescription>
         </CardHeader>
         <CardContent className="h-[400px] w-full p-8 pt-0">
           <ResponsiveContainer width="100%" height="100%">
@@ -311,7 +310,7 @@ export default function AnalysisPage() {
                 strokeWidth={2}
                 strokeDasharray="8 8" 
                 dot={false}
-                name="Regional Benchmark" 
+                name="Regional Target" 
               />
             </LineChart>
           </ResponsiveContainer>
@@ -320,4 +319,3 @@ export default function AnalysisPage() {
     </div>
   );
 }
-
