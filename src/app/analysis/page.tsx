@@ -49,13 +49,13 @@ export default function AnalysisPage() {
 
   // Updated Dynamic Yield Data to ensure 2026/2027 are visible
   const yieldData = useMemo(() => {
-    const year = 2026; // Set relative to the user's requested timeline
+    const year = 2026;
     const baseYield = metrics.totalArea > 0 ? metrics.totalArea * 2200 : 5000;
     
     return Array.from({ length: 6 }, (_, i) => {
       const y = year - 3 + i;
       const variationFactor = 0.8 + (Math.sin(i * 1.5) * 0.15);
-      const isActual = y <= year; // Treat current year and past as verified for the prototype display
+      const isActual = y <= year;
       
       return {
         year: y.toString(),
@@ -65,7 +65,6 @@ export default function AnalysisPage() {
     });
   }, [metrics.totalArea]);
 
-  // Dynamic Soil Health Data based on average pH
   const soilHealthData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const basePh = Number(metrics.avgPh) || 6.5;

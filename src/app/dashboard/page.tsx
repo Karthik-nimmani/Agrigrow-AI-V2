@@ -22,8 +22,7 @@ import {
   Maximize,
   FileText,
   Bug,
-  X,
-  Info
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -55,6 +54,7 @@ export default function Dashboard() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
+  // INITIALIZE FIELDS QUERY AT THE TOP
   const fieldsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'users', user.uid, 'farmFields');
