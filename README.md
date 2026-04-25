@@ -1,5 +1,12 @@
-# Firebase Studio
-
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+<img width="1600" height="840" alt="WhatsApp Image 2026-04-24 at 5 50 39 PM" src="https://github.com/user-attachments/assets/e676f4b0-3995-4161-ab3f-234b8840dc34" />
+<img width="1600" height="844" alt="WhatsApp Image 2026-04-24 at 5 51 31 PM" src="https://github.com/user-attachments/assets/ba4b0d43-e79d-435f-93ce-cb0fd4698a17" />
+<img width="1600" height="843" alt="WhatsApp Image 2026-04-24 at 5 52 25 PM" src="https://github.com/user-attachments/assets/f571804d-78b5-469b-88d7-1369f5cbd678" />
+<img width="1600" height="840" alt="WhatsApp Image 2026-04-24 at 6 17 42 PM" src="https://github.com/user-attachments/assets/6e696c03-d847-47fb-8b75-b44c1e8bd7f5" />
+<img width="1600" height="849" alt="WhatsApp Image 2026-04-24 at 6 18 34 PM" src="https://github.com/user-attachments/assets/bbd7cbb7-27aa-42cb-9ad7-23f0f5e7d6bb" />
+<img width="1600" height="835" alt="WhatsApp Image 2026-04-24 at 5 53 11 PM" src="https://github.com/user-attachments/assets/3e996ded-a50d-4e92-9e87-56e2d5195def" />
+<img width="1600" height="840" alt="WhatsApp Image 2026-04-24 at 5 55 19 PM" src="https://github.com/user-attachments/assets/513cb5c4-4450-49c0-91c3-11fb579a7e32" />
+<img width="1600" height="842" alt="WhatsApp Image 2026-04-24 at 5 56 15 PM" src="https://github.com/user-attachments/assets/6a08738d-e11f-4107-ad1a-1ac0f47ba8b6" />
+<img width="1600" height="843" alt="WhatsApp Image 2026-04-24 at 5 57 23 PM" src="https://github.com/user-attachments/assets/adc5d53d-6bef-47f5-bfcf-76a864d24365" />
+<img width="1600" height="840" alt="WhatsApp Image 2026-04-24 at 5 58 05 PM" src="https://github.com/user-attachments/assets/32de53e5-be91-4ae6-8343-8e69495faad7" />
+<img width="1600" height="834" alt="WhatsApp Image 2026-04-24 at 6 01 01 PM" src="https://github.com/user-attachments/assets/87cad880-5df3-4099-94b6-b8951acdad2b" />
+<img width="1600" height="844" alt="WhatsApp Image 2026-04-24 at 5 59 27 PM" src="https://github.com/user-attachments/assets/11c98ea2-7fb0-4527-acb3-9eba5c524e35" />
