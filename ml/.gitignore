@@ -1,0 +1,14 @@
+﻿data/raw/*
+data/processed/*
+artifacts/*
+reports/figures/*
+
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!artifacts/.gitkeep
+!reports/figures/.gitkeep
+
+__pycache__/
+.pytest_cache/
+.venv/
+*.py[cod]
